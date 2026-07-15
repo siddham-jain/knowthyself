@@ -1,0 +1,15 @@
+# Binaries
+/synch
+/dist/
+*.exe
+*.test
+*.out
+
+# Go
+/vendor/
+
+# Local
+*.db
+*.db-wal
+*.db-shm
+.DS_Store
