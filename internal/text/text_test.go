@@ -36,9 +36,9 @@ func TestExtractSlashCommand(t *testing.T) {
 
 func TestDominantScript(t *testing.T) {
 	cases := map[string]string{
-		"fix the bug":            "latin",
-		"मुख्य फ़ाइल में बग है":  "devanagari",
-		"main.py mein bug hai":   "latin",
+		"fix the bug": "latin",
+		"मुख्य फ़ाइल में बग है": "devanagari",
+		"main.py mein bug hai": "latin",
 	}
 	for in, want := range cases {
 		if got := DominantScript(in); got != want {

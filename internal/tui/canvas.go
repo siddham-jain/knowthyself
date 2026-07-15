@@ -12,10 +12,10 @@ import (
 // A parallel layer grid records whether each cell holds grid or data pixels so the
 // renderer can color them distinctly (faint grid, amber data).
 type canvas struct {
-	wDots, hDots int
+	wDots, hDots   int
 	wCells, hCells int
-	dots  []uint8 // braille dot bits per cell
-	layer []uint8 // 0=empty, 1=grid, 2=data (data wins)
+	dots           []uint8 // braille dot bits per cell
+	layer          []uint8 // 0=empty, 1=grid, 2=data (data wins)
 }
 
 // braille dot bit for a pixel at (col,row) within a cell: col∈{0,1}, row∈{0,1,2,3}.

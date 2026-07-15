@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"path/filepath"
 	"sort"
 
 	"github.com/siddham/synch/internal/insight"
@@ -22,6 +23,7 @@ func Analyze(ctx context.Context, sessions []model.Session, ie insight.Engine, n
 		Dimensions:    eval.Dimensions,
 		Archetype:     eval.Archetype,
 		Stats:         computeStats(sessions),
+		Sessions:      perSessionSummaries(sessions),
 	}
 	if ie != nil {
 		tips, err := ie.Generate(ctx, p)
@@ -31,6 +33,53 @@ func Analyze(ctx context.Context, sessions []model.Session, ie insight.Engine, n
 		p.Insights = tips
 	}
 	return p, nil
+}
+
+// perSessionSummaries scores each session individually (Evaluate over a single
+// session yields its own dimension scores) to build the chronological timeline used
+// by the drill-down and trend views. Sessions arrive ordered by StartedAt.
+func perSessionSummaries(sessions []model.Session) []profile.SessionSummary {
+	out := make([]profile.SessionSummary, 0, len(sessions))
+	for _, s := range sessions {
+		ev := score.Evaluate([]model.Session{s})
+		dims := map[profile.Dimension]float64{}
+		for _, d := range ev.Dimensions {
+			if d.Signal.Sufficient {
+				dims[d.Dimension] = d.Signal.Score
+			}
+		}
+		prompts := 0
+		for _, t := range s.Turns {
+			if t.Scorable() {
+				prompts++
+			}
+		}
+		out = append(out, profile.SessionSummary{
+			ID:         s.ID,
+			Label:      sessionLabel(s),
+			StartedAt:  s.StartedAt,
+			Overall:    ev.Overall,
+			Dimensions: dims,
+			Prompts:    prompts,
+			Tokens:     s.Tokens.Output + s.Tokens.TotalInput(),
+		})
+	}
+	return out
+}
+
+// sessionLabel builds a short human label: project basename + start date.
+func sessionLabel(s model.Session) string {
+	name := filepath.Base(s.Cwd)
+	if name == "" || name == "." || name == "/" {
+		name = s.ID
+		if len(name) > 8 {
+			name = name[:8]
+		}
+	}
+	if !s.StartedAt.IsZero() {
+		return name + " · " + s.StartedAt.Format("01-02 15:04")
+	}
+	return name
 }
 
 func sourceOf(sessions []model.Session) string {

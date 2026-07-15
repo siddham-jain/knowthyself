@@ -26,9 +26,30 @@ Deterministic, local, private — nothing leaves your machine unless you opt int
 ```
 make build     # -> ./synch
 make test      # unit + golden tests
-./synch        # sync + open the TUI dashboard
-./synch --json # emit the raw Profile
+./synch        # sync + open the interactive TUI dashboard
+./synch --json # emit the raw Profile (piped/non-TTY also renders a static frame)
 ```
+
+## Interactive dashboard
+
+On a terminal, `synch` opens an industrial-instrument dashboard that boots with a
+short power-on animation, then lets you explore:
+
+| Key | Action |
+|-----|--------|
+| `↑ ↓` / `j k` | move the cursor (select a dimension or session) |
+| `← →` / `tab` | switch view |
+| `1 2 3` | jump to Overview / Sessions / Trends |
+| `r` | replay the boot animation |
+| `q` / `esc` | quit |
+
+- **Overview** — radar + an *evidence inspector*: select any axis to see the exact
+  counts behind its score (auditable by design) plus the matching tip.
+- **Sessions** — drill into any session for its own mini-radar and per-dimension bars.
+- **Trends** — chronological sparklines per dimension ("am I improving?") + a
+  session timeline.
+
+Piped or non-interactive output falls back to a single static frame.
 
 ## Design
 

@@ -100,7 +100,7 @@ type Stats struct {
 	UserPrompts       int            `json:"user_prompts"`
 	TopTools          []Count        `json:"top_tools"`
 	TopSlashCommands  []Count        `json:"top_slash_commands"`
-	CacheHitRate      float64        `json:"cache_hit_rate"`      // 0..1
+	CacheHitRate      float64        `json:"cache_hit_rate"` // 0..1
 	TotalTokens       int64          `json:"total_tokens"`
 	PermissionModeMix map[string]int `json:"permission_mode_mix"` // e.g. {"auto":195,"plan":23}
 }
@@ -111,14 +111,28 @@ type Count struct {
 	Count int    `json:"count"`
 }
 
+// SessionSummary is a per-session score line, ordered chronologically. It powers
+// the drill-down and the trend/journey view, and gives external consumers a
+// timeline without re-scoring.
+type SessionSummary struct {
+	ID         string                `json:"id"`
+	Label      string                `json:"label"` // human label, e.g. "medkit-app · 07-14"
+	StartedAt  time.Time             `json:"started_at"`
+	Overall    float64               `json:"overall"`
+	Dimensions map[Dimension]float64 `json:"dimensions"` // only sufficient dimensions
+	Prompts    int                   `json:"prompts"`
+	Tokens     int64                 `json:"tokens"`
+}
+
 // Profile is the complete, serializable result of an analysis run.
 type Profile struct {
 	SchemaVersion int               `json:"schema_version"`
 	GeneratedAt   time.Time         `json:"generated_at"`
-	Source        string            `json:"source"` // "claude-code"
+	Source        string            `json:"source"`  // "claude-code"
 	Overall       float64           `json:"overall"` // weighted mean of sufficient dimensions, 0..10
 	Dimensions    []DimensionResult `json:"dimensions"`
 	Archetype     Archetype         `json:"archetype"`
 	Insights      []Insight         `json:"insights"`
 	Stats         Stats             `json:"stats"`
+	Sessions      []SessionSummary  `json:"sessions,omitempty"` // chronological, for drill-down & trends
 }

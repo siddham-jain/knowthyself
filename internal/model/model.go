@@ -22,16 +22,16 @@ const (
 // Session is one conversation with an AI coding assistant, normalized from a
 // provider's on-disk log.
 type Session struct {
-	ID         string    // provider-unique session id
-	Source     string    // provider id, e.g. "claude-code"
-	Cwd        string    // working directory (read from records, never from the encoded dir name)
-	GitBranch  string    // best-effort branch at session time
-	Models     []string  // distinct model ids seen in the session
-	Version    string    // provider/client version string (for schema branching)
-	StartedAt  time.Time // earliest record timestamp (zero if unknown)
-	EndedAt    time.Time // latest record timestamp (zero if unknown)
-	Turns      []Turn    // ordered conversation turns (synthetic/meta included, flagged)
-	Tokens     TokenUsage // session-level token totals (sum of assistant usage)
+	ID        string     // provider-unique session id
+	Source    string     // provider id, e.g. "claude-code"
+	Cwd       string     // working directory (read from records, never from the encoded dir name)
+	GitBranch string     // best-effort branch at session time
+	Models    []string   // distinct model ids seen in the session
+	Version   string     // provider/client version string (for schema branching)
+	StartedAt time.Time  // earliest record timestamp (zero if unknown)
+	EndedAt   time.Time  // latest record timestamp (zero if unknown)
+	Turns     []Turn     // ordered conversation turns (synthetic/meta included, flagged)
+	Tokens    TokenUsage // session-level token totals (sum of assistant usage)
 }
 
 // Turn is a single step in the conversation.
@@ -50,7 +50,7 @@ type Turn struct {
 	// User-turn signals.
 	SlashCommand string // e.g. "/clear" if this turn was a slash-command envelope ("" otherwise)
 
-    // Assistant-turn signals.
+	// Assistant-turn signals.
 	ToolCalls      []ToolCall // tool invocations issued in this assistant turn
 	ThinkingBlocks int        // count of reasoning/thinking blocks (plaintext ones)
 	EndsWithQ      bool       // assistant text ends in a question (clarification-loop signal)

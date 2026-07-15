@@ -1,10 +1,8 @@
 // Package tui renders the collaboration Profile as an industrial-instrument
-// dashboard in the terminal: a braille radar, dimensional readouts, headline stats,
-// and tips, styled from the shared design tokens. It's a report.Reporter.
-//
-// v1 renders a single static frame (the profile is computed once). Interactive
-// drill-down (Bubble Tea model/update) is a natural later addition behind the same
-// Reporter seam.
+// dashboard. On a real terminal it runs an interactive Bubble Tea program (boot
+// animation, navigable axes, evidence inspector, session drill-down, trends); when
+// output is piped or non-interactive (or in tests) it falls back to a single static
+// frame. Both paths share the same styled components and design tokens.
 package tui
 
 import (
@@ -13,13 +11,16 @@ import (
 	"os"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/term"
+
 	"github.com/siddham/synch/internal/design"
 	"github.com/siddham/synch/internal/profile"
 )
 
 // Reporter renders the dashboard to a writer (stdout by default; injectable for
-// tests).
+// tests, which always take the static path).
 type Reporter struct{ W io.Writer }
 
 // New returns a TUI reporter writing to stdout.
@@ -27,89 +28,115 @@ func New() Reporter { return Reporter{W: os.Stdout} }
 
 const width = 78
 
-// Render implements report.Reporter.
+// Render implements report.Reporter. It launches the interactive program on a TTY
+// and renders a static frame otherwise.
 func (r Reporter) Render(p profile.Profile) error {
 	w := r.W
 	if w == nil {
 		w = os.Stdout
 	}
+	if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
+		return runInteractive(p)
+	}
+	return renderStatic(w, p)
+}
+
+// runInteractive starts the Bubble Tea program on the alt screen.
+func runInteractive(p profile.Profile) error {
+	_, err := tea.NewProgram(newModel(p), tea.WithAltScreen()).Run()
+	return err
+}
+
+// renderStatic writes the non-interactive single frame.
+func renderStatic(w io.Writer, p profile.Profile) error {
 	var b strings.Builder
-	b.WriteString(header(p))
+	b.WriteString(header(p, width))
 	b.WriteByte('\n')
-	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, radarPanel(p), summaryPanel(p)))
+	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top,
+		radarPanelWith(p, radarOpts{fraction: 1, selected: -1}), summaryPanel(p)))
 	b.WriteByte('\n')
-	b.WriteString(dimensionsPanel(p))
+	b.WriteString(dimensionsPanelWith(p, -1))
 	b.WriteByte('\n')
-	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, statsPanel(p), insightsPanel(p)))
+	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, statsPanel(p), insightsPanel(p, width-34-2)))
 	b.WriteByte('\n')
 	fmt.Fprintln(w, b.String())
 	return nil
 }
 
-func header(p profile.Profile) string {
+// --- shared styled components (used by both static and interactive views) ---
+
+func header(p profile.Profile, w int) string {
 	title := design.Header.Render("SYNCH")
 	sub := design.Dim.Render(" // AI COLLABORATION PROFILE")
 	meta := design.Label.Render(fmt.Sprintf("SRC %s   GEN %s",
 		strings.ToUpper(p.Source), p.GeneratedAt.Format("2006-01-02 15:04")))
-	line := lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("━", width))
 	top := lipgloss.JoinHorizontal(lipgloss.Bottom, title, sub)
-	gap := width - lipgloss.Width(top) - lipgloss.Width(meta)
+	gap := w - lipgloss.Width(top) - lipgloss.Width(meta)
 	if gap < 1 {
 		gap = 1
 	}
+	line := lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("━", w))
 	return top + strings.Repeat(" ", gap) + meta + "\n" + line
 }
 
-func radarPanel(p profile.Profile) string {
-	radar := radarBlock(p.Dimensions, 44, 44)
-	legend := axisLegend(p.Dimensions)
+func radarPanelWith(p profile.Profile, opt radarOpts) string {
+	radar := radarBlockWith(p.Dimensions, 44, 44, opt)
+	legend := axisLegend(p.Dimensions, opt.selected)
 	body := lipgloss.JoinHorizontal(lipgloss.Center, radar, "  ", legend)
-	return design.Panel.Width(48).Render(
-		design.Label.Render("COLLABORATION RADAR") + "\n" + body)
+	return design.Panel.Width(48).Render(design.Label.Render("COLLABORATION RADAR") + "\n" + body)
 }
 
-// axisLegend lists the axes with their readings beside the radar.
-func axisLegend(dims []profile.DimensionResult) string {
+// axisLegend lists the axes beside the radar; the selected axis is emphasized.
+func axisLegend(dims []profile.DimensionResult, selected int) string {
 	var b strings.Builder
 	for i, d := range dims {
-		marker := lipgloss.NewStyle().Foreground(design.Accent).Render(fmt.Sprintf("%d", i+1))
-		name := design.Label.Render(shortDim(d.Dimension))
-		b.WriteString(marker + " " + name + "  " + reading(d.Signal) + "\n")
+		mark := fmt.Sprintf("%d", i+1)
+		nameStyle := design.Label
+		markStyle := lipgloss.NewStyle().Foreground(design.Accent)
+		if i == selected {
+			mark = "▸" + mark
+			nameStyle = lipgloss.NewStyle().Foreground(design.Ink).Bold(true)
+			markStyle = markStyle.Bold(true)
+		}
+		b.WriteString(markStyle.Render(mark) + " " + nameStyle.Render(shortDim(d.Dimension)) +
+			"  " + reading(d.Signal) + "\n")
 	}
 	return b.String()
 }
 
 func summaryPanel(p profile.Profile) string {
-	score := p.Overall
-	big := lipgloss.NewStyle().Foreground(design.ScoreColor(score)).Bold(true).
-		Render(fmt.Sprintf("%.1f", score))
-	scale := design.Dim.Render(" / 10")
-	arch := design.Value.Render(strings.ToUpper(p.Archetype.Name))
-	blurb := design.Label.Render(wrap(p.Archetype.Blurb, 24))
-	expl := design.Dim.Render(wrap(p.Archetype.Explanation, 24))
-
+	big := lipgloss.NewStyle().Foreground(design.ScoreColor(p.Overall)).Bold(true).
+		Render(fmt.Sprintf("%.1f", p.Overall))
 	body := design.Label.Render("OVERALL") + "\n" +
-		big + scale + "\n\n" +
+		big + design.Dim.Render(" / 10") + "\n\n" +
 		design.Label.Render("ARCHETYPE") + "\n" +
-		arch + "\n" + blurb + "\n\n" + expl
+		design.Value.Render(strings.ToUpper(p.Archetype.Name)) + "\n" +
+		design.Label.Render(wrap(p.Archetype.Blurb, 24)) + "\n\n" +
+		design.Dim.Render(wrap(p.Archetype.Explanation, 24))
 	return design.Panel.Width(28).Render(body)
 }
 
-func dimensionsPanel(p profile.Profile) string {
+func dimensionsPanelWith(p profile.Profile, selected int) string {
 	var b strings.Builder
 	b.WriteString(design.Label.Render("DIMENSIONS") + "\n")
-	for _, d := range p.Dimensions {
-		name := lipgloss.NewStyle().Foreground(design.Ink).Width(22).Render(d.Title)
+	for i, d := range p.Dimensions {
+		cursor := "  "
+		nameStyle := lipgloss.NewStyle().Foreground(design.Ink)
+		if i == selected {
+			cursor = lipgloss.NewStyle().Foreground(design.Accent).Render("▸ ")
+			nameStyle = nameStyle.Bold(true)
+		}
+		name := nameStyle.Width(22).Render(d.Title)
 		var meter, val string
 		if d.Signal.Sufficient {
-			meterStyle := lipgloss.NewStyle().Foreground(design.ScoreColor(d.Signal.Score))
-			meter = meterStyle.Render(design.Bar(d.Signal.Score, 32))
-			val = meterStyle.Bold(true).Render(fmt.Sprintf(" %4.1f", d.Signal.Score))
+			ms := lipgloss.NewStyle().Foreground(design.ScoreColor(d.Signal.Score))
+			meter = ms.Render(design.Bar(d.Signal.Score, 30))
+			val = ms.Bold(true).Render(fmt.Sprintf(" %4.1f", d.Signal.Score))
 		} else {
-			meter = design.Dim.Render(strings.Repeat("░", 32))
+			meter = design.Dim.Render(strings.Repeat("░", 30))
 			val = design.Dim.Render("  n/a")
 		}
-		b.WriteString(name + meter + val + "\n")
+		b.WriteString(cursor + name + meter + val + "\n")
 	}
 	return design.Panel.Width(width - 2).Render(strings.TrimRight(b.String(), "\n"))
 }
@@ -134,21 +161,22 @@ func statsPanel(p profile.Profile) string {
 	return design.Panel.Width(34).Render(strings.TrimRight(b.String(), "\n"))
 }
 
-func insightsPanel(p profile.Profile) string {
+func insightsPanel(p profile.Profile, panelWidth int) string {
 	var b strings.Builder
 	b.WriteString(design.Label.Render("SIGNALS & TIPS") + "\n")
 	if len(p.Insights) == 0 {
 		b.WriteString(design.Dim.Render("No tips — clean run."))
 	}
+	textWidth := panelWidth - 4
 	for i, in := range p.Insights {
 		bullet := lipgloss.NewStyle().Foreground(design.Accent).Render("▸ ")
 		b.WriteString(bullet + design.Title.Render(in.Title) + "\n")
-		b.WriteString(design.Dim.Render(wrap(in.Body, 40)))
+		b.WriteString(design.Dim.Render(wrap(in.Body, textWidth)))
 		if i < len(p.Insights)-1 {
 			b.WriteString("\n\n")
 		}
 	}
-	return design.Panel.Width(width - 34 - 2).Render(strings.TrimRight(b.String(), "\n"))
+	return design.Panel.Width(panelWidth).Render(strings.TrimRight(b.String(), "\n"))
 }
 
 // --- small helpers ---
@@ -191,7 +219,7 @@ func humanTokens(n int64) string {
 	}
 }
 
-// wrap hard-wraps text to width columns (rune-aware; keeps words intact).
+// wrap hard-wraps text to w columns (rune-aware; keeps words intact).
 func wrap(s string, w int) string {
 	words := strings.Fields(s)
 	if len(words) == 0 {
