@@ -106,10 +106,12 @@ func radarPanelWith(p profile.Profile, opt radarOpts, total int) string {
 	area := textArea(total)
 	radarCells := clampInt(area-legendCols-2, 12, 24)
 	dots := radarCells * 2
+	opt.numbers = true
 	radar := radarBlockWith(p.Dimensions, dots, dots, opt)
 	legend := axisLegend(p.Dimensions, opt.selected)
 	body := lipgloss.JoinHorizontal(lipgloss.Center, radar, "  ", legend)
-	return panelBox(total).Render(design.Label.Render("COLLABORATION RADAR") + "\n" + body)
+	title := design.Label.Render("COLLABORATION RADAR") + " " + scaleCaption()
+	return panelBox(total).Render(title + "\n" + body)
 }
 
 func axisLegend(dims []profile.DimensionResult, selected int) string {

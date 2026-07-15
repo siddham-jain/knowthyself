@@ -12,13 +12,14 @@ import "github.com/charmbracelet/lipgloss"
 
 // Palette — monochrome graphite/ink/paper neutrals + one industrial accent.
 var (
-	Ink     = lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#e8e6e1"} // primary text
-	Muted   = lipgloss.AdaptiveColor{Light: "#6b6b6b", Dark: "#8a8782"} // secondary text
-	Faint   = lipgloss.AdaptiveColor{Light: "#9a9a9a", Dark: "#5a5854"} // rules, hints
-	Paper   = lipgloss.AdaptiveColor{Light: "#f5f4f1", Dark: "#141413"} // background wells
-	Accent  = lipgloss.AdaptiveColor{Light: "#b5560f", Dark: "#e08a3c"} // oxide amber: live values, active axis
-	Danger  = lipgloss.AdaptiveColor{Light: "#8a2f2f", Dark: "#c85a5a"} // alerts only
-	Success = lipgloss.AdaptiveColor{Light: "#3a6b3a", Dark: "#7aa86f"} // strong readings only
+	Ink       = lipgloss.AdaptiveColor{Light: "#1a1a1a", Dark: "#e8e6e1"} // primary text
+	Muted     = lipgloss.AdaptiveColor{Light: "#6b6b6b", Dark: "#8a8782"} // secondary text
+	Faint     = lipgloss.AdaptiveColor{Light: "#9a9a9a", Dark: "#5a5854"} // rules, hints
+	Paper     = lipgloss.AdaptiveColor{Light: "#f5f4f1", Dark: "#141413"} // background wells
+	Accent    = lipgloss.AdaptiveColor{Light: "#b5560f", Dark: "#e08a3c"} // oxide amber: live values, active axis
+	AccentDim = lipgloss.AdaptiveColor{Light: "#d99a5c", Dark: "#8a5a2a"} // muted amber: filled area behind the edge
+	Danger    = lipgloss.AdaptiveColor{Light: "#8a2f2f", Dark: "#c85a5a"} // alerts only
+	Success   = lipgloss.AdaptiveColor{Light: "#3a6b3a", Dark: "#7aa86f"} // strong readings only
 )
 
 // Border is a squared, technical frame (no rounded corners — this is instrumentation).
