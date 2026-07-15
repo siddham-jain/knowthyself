@@ -36,8 +36,10 @@ type model struct {
 type tickMsg time.Time
 
 const (
-	animStep   = 0.045 // progress added per frame (~0.5s total)
-	frameEvery = time.Second / 30
+	// A ~0.9s power-on at 60fps. Progress is linear here; the view applies an
+	// ease-out curve so the instrument decelerates smoothly into its settled state.
+	animStep   = 1.0 / 54.0
+	frameEvery = time.Second / 60
 )
 
 func newModel(p profile.Profile) model {
