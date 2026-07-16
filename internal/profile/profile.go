@@ -79,9 +79,10 @@ type DimensionResult struct {
 
 // Archetype is the collaboration persona derived from the shape of the radar.
 type Archetype struct {
-	Name        string `json:"name"`        // "Architect", "Prober", ...
-	Blurb       string `json:"blurb"`       // one-line description
-	Explanation string `json:"explanation"` // why this archetype was chosen (dimension shape)
+	Name        string   `json:"name"`             // "Architect", "Conductor", ...
+	Blurb       string   `json:"blurb"`            // one-line identity description
+	Explanation string   `json:"explanation"`      // why this archetype was chosen (dimension shape)
+	Traits      []string `json:"traits,omitempty"` // deterministic badges: "Polyglot", "Night Owl", ...
 }
 
 // Insight is one actionable tip. Deterministic template tips by default; optional
@@ -93,7 +94,8 @@ type Insight struct {
 	Source    string    `json:"source"` // "heuristic" or "deep-eval"
 }
 
-// Stats are the fun, headline numbers shown alongside the grade.
+// Stats are the fun, headline numbers shown alongside the grade — the "by the
+// numbers" material behind the first-run reveal.
 type Stats struct {
 	Sessions          int            `json:"sessions"`
 	Turns             int            `json:"turns"`
@@ -103,6 +105,13 @@ type Stats struct {
 	CacheHitRate      float64        `json:"cache_hit_rate"` // 0..1
 	TotalTokens       int64          `json:"total_tokens"`
 	PermissionModeMix map[string]int `json:"permission_mode_mix"` // e.g. {"auto":195,"plan":23}
+
+	// Reveal "by the numbers" — awe stats, all derived from logs already on disk.
+	CollabSeconds  int64     `json:"collab_seconds"`      // summed per-session span (EndedAt-StartedAt)
+	FirstSessionAt time.Time `json:"first_session_at"`    // earliest session start (tenure)
+	PeakHour       int       `json:"peak_hour"`           // 0..23 local hour of most activity; -1 if unknown
+	Languages      []string  `json:"languages,omitempty"` // e.g. ["English","Hindi"], most-used first
+	Projects       int       `json:"projects"`            // distinct project working directories
 }
 
 // Count is a name/count pair (ranked lists), kept ordered for deterministic output.

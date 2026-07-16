@@ -58,6 +58,25 @@ func TestResponsiveReflow(t *testing.T) {
 	}
 }
 
+// The first-run reveal must also reflow cleanly across the width sweep.
+func TestRevealReflow(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	p := profileWithSessions()
+	p.Archetype.Traits = []string{"Polyglot", "Night Owl"}
+	for _, w := range []int{46, 47, 60, 73, 74, 100, 220} {
+		m := settled(p)
+		m.atReveal = true
+		m.w, m.h = w, 44
+		out := m.View()
+		if got := maxLineWidth(out); got > w {
+			t.Errorf("w=%d reveal overflow: max line %d > %d", w, got, w)
+		}
+		if !strings.Contains(out, "YOU ARE A") {
+			t.Errorf("w=%d reveal missing headline", w)
+		}
+	}
+}
+
 // Below the minimum width, show a clear message rather than a broken layout.
 func TestTooNarrowMessage(t *testing.T) {
 	lipgloss.SetColorProfile(0)

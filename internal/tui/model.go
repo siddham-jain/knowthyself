@@ -30,6 +30,10 @@ type model struct {
 	// boot animation
 	booting  bool
 	progress float64 // 0..1
+
+	// atReveal is the first-run persona portrait the boot lands on; any key leaves
+	// it for the graded dashboard.
+	atReveal bool
 }
 
 // tickMsg drives the boot animation.
@@ -43,7 +47,7 @@ const (
 )
 
 func newModel(p profile.Profile) model {
-	return model{p: p, mode: viewOverview, booting: true}
+	return model{p: p, mode: viewOverview, booting: true, atReveal: true}
 }
 
 func (m model) Init() tea.Cmd { return tickCmd() }
@@ -76,19 +80,31 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	key := msg.String()
-	// Any key skips the boot animation; quit keys still quit.
+	// Quit always wins, in any state.
+	if key == "q" || key == "ctrl+c" || key == "esc" {
+		return m, tea.Quit
+	}
+	// Any key skips the boot animation, landing on the reveal.
 	if m.booting {
 		m.booting = false
 		m.progress = 1
-		if key == "q" || key == "ctrl+c" || key == "esc" {
-			return m, tea.Quit
+		return m, nil
+	}
+	// From the reveal, any key opens the dashboard (honoring a tab/number jump).
+	if m.atReveal {
+		m.atReveal = false
+		switch key {
+		case "2":
+			m.mode = viewSessions
+		case "3":
+			m.mode = viewTrends
+		default:
+			m.mode = viewOverview
 		}
 		return m, nil
 	}
 
 	switch key {
-	case "q", "ctrl+c", "esc":
-		return m, tea.Quit
 	case "tab", "right":
 		m.mode = (m.mode + 1) % viewCount
 	case "shift+tab", "left":
@@ -104,9 +120,10 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "down", "j":
 		m.moveCursor(1)
 	case "r":
-		// replay the boot animation
+		// replay the boot animation, back to the reveal
 		m.booting = true
 		m.progress = 0
+		m.atReveal = true
 		return m, tickCmd()
 	}
 	return m, nil

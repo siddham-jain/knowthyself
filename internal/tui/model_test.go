@@ -38,12 +38,40 @@ func advance(m model, msg tea.Msg) model {
 	return next.(model)
 }
 
+// settled returns a model past the boot animation AND past the first-run reveal,
+// i.e. on the graded dashboard — the state most view tests exercise.
 func settled(p profile.Profile) model {
 	m := newModel(p)
 	m = advance(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.booting = false
 	m.progress = 1
+	m.atReveal = false
 	return m
+}
+
+func TestRevealThenDashboard(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	m := newModel(profileWithSessions())
+	m = advance(m, tea.WindowSizeMsg{Width: 120, Height: 40})
+	// Skip the boot animation → land on the reveal.
+	m = advance(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
+	if !m.atReveal {
+		t.Fatalf("expected to land on the reveal after boot")
+	}
+	out := m.View()
+	for _, want := range []string{"YOU ARE A", "full breakdown"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("reveal missing %q", want)
+		}
+	}
+	// Any key opens the dashboard.
+	m = advance(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{' '}})
+	if m.atReveal {
+		t.Fatalf("a key should dismiss the reveal")
+	}
+	if !strings.Contains(m.View(), "INSPECT") {
+		t.Fatalf("expected the overview dashboard after the reveal")
+	}
 }
 
 func TestBootViewRenders(t *testing.T) {

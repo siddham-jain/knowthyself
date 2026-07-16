@@ -4,11 +4,13 @@ import (
 	"context"
 	"path/filepath"
 	"sort"
+	"time"
 
 	"github.com/siddham/synch/internal/insight"
 	"github.com/siddham/synch/internal/model"
 	"github.com/siddham/synch/internal/profile"
 	"github.com/siddham/synch/internal/score"
+	"github.com/siddham/synch/internal/text"
 )
 
 // Analyze runs the scoring engine over the sessions, computes headline stats, and
@@ -25,6 +27,7 @@ func Analyze(ctx context.Context, sessions []model.Session, ie insight.Engine, n
 		Stats:         computeStats(sessions),
 		Sessions:      perSessionSummaries(sessions),
 	}
+	p.Archetype.Traits = deriveTraits(p.Stats, now())
 	if ie != nil {
 		tips, err := ie.Generate(ctx, p)
 		if err != nil {
@@ -89,21 +92,40 @@ func sourceOf(sessions []model.Session) string {
 	return ""
 }
 
-// computeStats derives the fun, headline numbers shown alongside the grade.
+// computeStats derives the fun, headline numbers shown alongside the grade and
+// behind the first-run reveal (hours together, tenure, peak hour, languages,
+// projects). Everything is drawn from data already parsed onto the sessions.
 func computeStats(sessions []model.Session) profile.Stats {
-	st := profile.Stats{Sessions: len(sessions), PermissionModeMix: map[string]int{}}
+	st := profile.Stats{Sessions: len(sessions), PeakHour: -1, PermissionModeMix: map[string]int{}}
 	toolCounts := map[string]int{}
 	slashCounts := map[string]int{}
+	scriptCounts := map[string]int{}
+	projects := map[string]bool{}
+	var hourHist [24]int
 	var totalInput, cacheRead int64
+	var totalDur time.Duration
 
 	for _, s := range sessions {
 		st.Turns += len(s.Turns)
 		st.TotalTokens += s.Tokens.Output + s.Tokens.TotalInput()
 		totalInput += s.Tokens.TotalInput()
 		cacheRead += s.Tokens.CacheRead
+		if s.Cwd != "" {
+			projects[s.Cwd] = true
+		}
+		if !s.StartedAt.IsZero() && !s.EndedAt.IsZero() && s.EndedAt.After(s.StartedAt) {
+			totalDur += s.EndedAt.Sub(s.StartedAt)
+		}
+		if !s.StartedAt.IsZero() && (st.FirstSessionAt.IsZero() || s.StartedAt.Before(st.FirstSessionAt)) {
+			st.FirstSessionAt = s.StartedAt
+		}
 		for _, t := range s.Turns {
+			if !t.Timestamp.IsZero() {
+				hourHist[t.Timestamp.Hour()]++
+			}
 			if t.Scorable() {
 				st.UserPrompts++
+				scriptCounts[text.DominantScript(t.Text)]++
 			}
 			if t.SlashCommand != "" {
 				slashCounts[t.SlashCommand]++
@@ -119,9 +141,75 @@ func computeStats(sessions []model.Session) profile.Stats {
 	if totalInput > 0 {
 		st.CacheHitRate = float64(cacheRead) / float64(totalInput)
 	}
+	st.CollabSeconds = int64(totalDur.Seconds())
+	st.Projects = len(projects)
+	st.PeakHour = peakHour(hourHist)
+	st.Languages = languageMix(scriptCounts)
 	st.TopTools = topN(toolCounts, 5)
 	st.TopSlashCommands = topN(slashCounts, 5)
 	return st
+}
+
+// peakHour returns the hour (0..23) with the most turn activity, or -1 if there is
+// no timestamped activity. Ties break toward the earlier hour for determinism.
+func peakHour(hist [24]int) int {
+	best, bestH := 0, -1
+	for h, c := range hist {
+		if c > best {
+			best, bestH = c, h
+		}
+	}
+	return bestH
+}
+
+// languageMix maps dominant-script counts to friendly language names, most-used
+// first. Latin→English, Devanagari→Hindi; "other" scripts are only surfaced when
+// they're all there is, so a code-heavy corpus doesn't sprout a noisy label.
+func languageMix(scriptCounts map[string]int) []string {
+	type lc struct {
+		name string
+		n    int
+	}
+	var langs []lc
+	if n := scriptCounts["latin"]; n > 0 {
+		langs = append(langs, lc{"English", n})
+	}
+	if n := scriptCounts["devanagari"]; n > 0 {
+		langs = append(langs, lc{"Hindi", n})
+	}
+	if len(langs) == 0 {
+		if n := scriptCounts["other"]; n > 0 {
+			langs = append(langs, lc{"Other", n})
+		}
+	}
+	sort.SliceStable(langs, func(i, j int) bool { return langs[i].n > langs[j].n })
+	out := make([]string, len(langs))
+	for i, l := range langs {
+		out[i] = l.name
+	}
+	return out
+}
+
+// deriveTraits produces the celebratory badges shown under the archetype. Each is
+// deterministic and strictly positive framing — a flourish, never a deficiency.
+func deriveTraits(st profile.Stats, now time.Time) []string {
+	var traits []string
+	if len(st.Languages) >= 2 {
+		traits = append(traits, "Polyglot")
+	}
+	if !st.FirstSessionAt.IsZero() && now.Sub(st.FirstSessionAt) >= 90*24*time.Hour {
+		traits = append(traits, "Veteran")
+	}
+	if st.Sessions > 0 && st.CollabSeconds/int64(st.Sessions) >= int64((45*time.Minute).Seconds()) {
+		traits = append(traits, "Deep Diver")
+	}
+	switch {
+	case st.PeakHour >= 21 || (st.PeakHour >= 0 && st.PeakHour <= 4):
+		traits = append(traits, "Night Owl")
+	case st.PeakHour >= 5 && st.PeakHour <= 8:
+		traits = append(traits, "Early Bird")
+	}
+	return traits
 }
 
 // topN returns the highest-count entries, ordered by count desc then name asc for

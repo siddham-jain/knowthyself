@@ -45,6 +45,12 @@ func (m model) View() string {
 	}
 
 	lay := m.layout()
+	// The reveal is a full-screen first-run portrait with its own minimal footer.
+	if m.atReveal && !m.booting {
+		frame := header(m.p, lay.w) + "\n" + m.revealView(lay) + "\n" + m.revealFooter(lay.w)
+		return lipgloss.Place(m.w, m.h, lipgloss.Center, lipgloss.Center, frame)
+	}
+
 	var body string
 	switch {
 	case m.booting:
