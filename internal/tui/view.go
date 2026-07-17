@@ -5,19 +5,20 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/synch/internal/design"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham/reflect/internal/profile"
 )
 
-// layout captures the responsive decisions for the current terminal width.
+// layout captures the responsive decisions for the current terminal size.
 type layout struct {
 	w      int  // dashboard content width (rendered)
+	h      int  // terminal height, so views can drop/shrink sections to fit
 	twoCol bool // place paired panels side by side (else stack vertically)
 }
 
 func (m model) layout() layout {
 	w := clampInt(m.w-2, minWidth, maxWidth)
-	return layout{w: w, twoCol: w >= twoColMin}
+	return layout{w: w, h: m.h, twoCol: w >= twoColMin}
 }
 
 // easeOutCubic decelerates the boot animation so it settles smoothly (no bounce —
@@ -39,16 +40,17 @@ func (m model) View() string {
 		return "\n  initializing…"
 	}
 	if m.w < minWidth {
-		msg := design.Dim.Render("⚠ terminal too narrow\n  widen to ≥ " +
-			fmt.Sprintf("%d", minWidth+2) + " columns")
-		return lipgloss.Place(m.w, m.h, lipgloss.Center, lipgloss.Center, msg)
+		return m.notice("⚠ terminal too narrow", "widen to ≥ "+fmt.Sprintf("%d", minWidth+2)+" columns")
+	}
+	if m.h < minHeight {
+		return m.notice("↕ terminal too short", "give me ≥ "+fmt.Sprintf("%d", minHeight)+" rows")
 	}
 
 	lay := m.layout()
 	// The reveal is a full-screen first-run portrait with its own minimal footer.
 	if m.atReveal && !m.booting {
 		frame := header(m.p, lay.w) + "\n" + m.revealView(lay) + "\n" + m.revealFooter(lay.w)
-		return lipgloss.Place(m.w, m.h, lipgloss.Center, lipgloss.Center, frame)
+		return m.fit(frame)
 	}
 
 	var body string
@@ -63,7 +65,25 @@ func (m model) View() string {
 		body = m.overviewView(lay)
 	}
 	frame := header(m.p, lay.w) + "\n" + body + "\n" + m.footer(lay.w)
-	return lipgloss.Place(m.w, m.h, lipgloss.Center, lipgloss.Center, frame)
+	return m.fit(frame)
+}
+
+// notice centers a short two-line message in the viewport (too narrow / too short).
+func (m model) notice(title, sub string) string {
+	msg := lipgloss.NewStyle().Foreground(design.Accent).Render(title) + "\n" + design.Dim.Render(sub)
+	return lipgloss.Place(m.w, m.h, lipgloss.Center, lipgloss.Center, msg)
+}
+
+// fit centers the frame in the viewport and clips it to the terminal height. The clip
+// is the safety net: without it, a frame taller than the screen overflows the
+// alt-screen and leaves blank/garbled scrollback until the user resizes.
+func (m model) fit(frame string) string {
+	out := lipgloss.Place(m.w, m.h, lipgloss.Center, lipgloss.Center, frame)
+	lines := strings.Split(out, "\n")
+	if len(lines) > m.h {
+		lines = lines[:m.h]
+	}
+	return strings.Join(lines, "\n")
 }
 
 // stack places two panels side by side when there's room, else vertically. leftW is
@@ -79,8 +99,9 @@ func (lay layout) stack(left, right func(total int) string, leftW int) string {
 
 func (m model) bootView(lay layout) string {
 	e := easeOutCubic(m.progress)
+	rows := clampInt(lay.h-8, 4, 14)
 	radar := func(total int) string {
-		return radarPanelWith(m.p, radarOpts{fraction: e, selected: -1}, total)
+		return radarPanelWith(m.p, radarOpts{fraction: e, selected: -1, maxRows: rows}, total)
 	}
 	gauge := func(total int) string {
 		barW := clampInt(textArea(total)-8, 8, 30)
@@ -100,17 +121,28 @@ func (m model) bootView(lay layout) string {
 // --- overview ---
 
 func (m model) overviewView(lay layout) string {
+	// Budget the vertical space (minus header, footer, and separators) and let the
+	// radar shrink; include the detail row only if it still fits, so a short terminal
+	// drops a panel cleanly instead of overflowing.
+	budget := lay.h - 4
+	rows := clampInt(budget/3, 4, 12)
 	radar := func(total int) string {
-		return radarPanelWith(m.p, radarOpts{fraction: 1, selected: m.dimCursor}, total)
+		return radarPanelWith(m.p, radarOpts{fraction: 1, selected: m.dimCursor, maxRows: rows}, total)
 	}
 	summary := func(total int) string { return summaryPanel(m.p, total) }
-	inspector := func(total int) string { return inspectorPanel(m.p, m.dimCursor, total) }
-	stats := func(total int) string { return statsPanel(m.p, total) }
-
 	top := lay.stack(radar, summary, radarWidth(lay))
 	dims := dimensionsPanel(m.p, m.dimCursor, lay.w)
+
+	sections := []string{top, dims}
+	used := lipgloss.Height(top) + 1 + lipgloss.Height(dims)
+
+	inspector := func(total int) string { return inspectorPanel(m.p, m.dimCursor, total) }
+	stats := func(total int) string { return statsPanel(m.p, total) }
 	bottom := lay.stack(stats, inspector, 34)
-	return top + "\n" + dims + "\n" + bottom
+	if used+1+lipgloss.Height(bottom) <= budget {
+		sections = append(sections, bottom)
+	}
+	return strings.Join(sections, "\n")
 }
 
 // radarWidth picks the radar panel's width in two-column mode, leaving the rest for
@@ -231,7 +263,7 @@ func (m model) sessionList(total int) string {
 	nameW := clampInt(textArea(total)-8, 12, 30)
 	var b strings.Builder
 	b.WriteString(design.Label.Render("SESSIONS") + "\n")
-	const rows = 12
+	rows := clampInt(m.h-8, 6, 16) // fit the visible window to the terminal height
 	start := clampInt(m.sessCursor-rows/2, 0, maxInt(0, len(m.p.Sessions)-rows))
 	end := minInt(start+rows, len(m.p.Sessions))
 	for i := start; i < end; i++ {

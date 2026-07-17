@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/siddham/synch/internal/model"
+	"github.com/siddham/reflect/internal/model"
 )
 
 // SessionRef is a lightweight handle to a discoverable session, returned by

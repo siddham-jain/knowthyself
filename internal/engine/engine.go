@@ -10,9 +10,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/siddham/synch/internal/model"
-	"github.com/siddham/synch/internal/provider"
-	"github.com/siddham/synch/internal/store"
+	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham/reflect/internal/provider"
+	"github.com/siddham/reflect/internal/store"
 )
 
 // Clock returns the current time; injectable so tests stay deterministic.

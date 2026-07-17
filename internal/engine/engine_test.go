@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siddham/synch/internal/provider/claude"
-	"github.com/siddham/synch/internal/store"
+	"github.com/siddham/reflect/internal/provider/claude"
+	"github.com/siddham/reflect/internal/store"
 )
 
 // fixedClock returns a deterministic time for reproducible sync bookkeeping.

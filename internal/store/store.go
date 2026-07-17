@@ -7,7 +7,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/siddham/synch/internal/model"
+	"github.com/siddham/reflect/internal/model"
 )
 
 // SyncState records what we last knew about a session's backing file, so delta-sync

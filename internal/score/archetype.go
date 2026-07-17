@@ -3,7 +3,7 @@ package score
 import (
 	"math"
 
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // An archetype is a collaboration persona with a signature: the relative emphasis
@@ -71,7 +71,7 @@ func deriveArchetype(scoreByDim map[profile.Dimension]float64, suff map[profile.
 		return profile.Archetype{
 			Name:        "Newcomer",
 			Blurb:       "Not enough history yet to profile your style.",
-			Explanation: "No dimension had sufficient data. Keep using your AI tools and re-run synch.",
+			Explanation: "No dimension had sufficient data. Keep using your AI tools and re-run reflect.",
 		}
 	}
 	for i := 0; i < len(ranked); i++ {

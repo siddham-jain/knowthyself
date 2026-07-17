@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/synch/internal/design"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // tokensPerNovel is a deliberately round, clearly-approximate yardstick for turning
@@ -18,8 +18,9 @@ const tokensPerNovel = 120_000
 // on. It is intentionally free of any judgmental/coach content; the graded
 // dashboard is one keystroke away.
 func (m model) revealView(lay layout) string {
+	rows := clampInt(lay.h-8, 4, 14)
 	radar := func(total int) string {
-		return radarPanelWith(m.p, radarOpts{fraction: 1, selected: -1}, total)
+		return radarPanelWith(m.p, radarOpts{fraction: 1, selected: -1, maxRows: rows}, total)
 	}
 	hero := func(total int) string { return revealHero(m.p, total) }
 	return lay.stack(radar, hero, radarWidth(lay))

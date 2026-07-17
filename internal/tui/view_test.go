@@ -87,11 +87,12 @@ func TestTooNarrowMessage(t *testing.T) {
 	}
 }
 
-// Narrow terminals stack panels and use the short footer, but still show every panel.
+// Narrow terminals stack panels and use the short footer. Given enough vertical room
+// (stacked panels are tall), every panel still shows.
 func TestNarrowStacks(t *testing.T) {
 	lipgloss.SetColorProfile(0)
 	m := settled(profileWithSessions())
-	m.w, m.h = 60, 44
+	m.w, m.h = 60, 80
 	out := m.View()
 	for _, want := range []string{"COLLABORATION RADAR", "OVERALL", "DIMENSIONS", "TELEMETRY", "INSPECT"} {
 		if !strings.Contains(out, want) {
@@ -100,6 +101,40 @@ func TestNarrowStacks(t *testing.T) {
 	}
 	if !strings.Contains(out, "q quit") {
 		t.Errorf("footer missing short keys")
+	}
+}
+
+// The core responsiveness fix: no view may ever render more lines than the terminal
+// height (overflow is what corrupted the alt-screen scrollback until a resize).
+func TestNeverOverflowsHeight(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	p := profileWithSessions()
+	for _, sz := range []struct{ w, h int }{
+		{60, 20}, {80, 24}, {100, 30}, {74, 16}, {120, 40}, {46, 14},
+	} {
+		m := settled(p)
+		m.w, m.h = sz.w, sz.h
+		for _, mode := range []viewMode{viewOverview, viewSessions, viewTrends} {
+			m.mode = mode
+			if got := strings.Count(m.View(), "\n") + 1; got > sz.h {
+				t.Errorf("w=%d h=%d mode=%d overflow: %d lines > %d", sz.w, sz.h, mode, got, sz.h)
+			}
+		}
+		// The reveal too.
+		m.atReveal = true
+		if got := strings.Count(m.View(), "\n") + 1; got > sz.h {
+			t.Errorf("w=%d h=%d reveal overflow: %d lines > %d", sz.w, sz.h, got, sz.h)
+		}
+	}
+}
+
+// Below the minimum height, show a clear message rather than a broken frame.
+func TestTooShortMessage(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	m := settled(profileWithSessions())
+	m.w, m.h = 80, 8
+	if !strings.Contains(m.View(), "too short") {
+		t.Fatalf("expected too-short message")
 	}
 }
 

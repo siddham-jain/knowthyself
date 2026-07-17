@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 func sampleProfile() profile.Profile {
@@ -41,7 +41,7 @@ func TestRenderContainsKeyElements(t *testing.T) {
 	}
 	out := buf.String()
 	for _, want := range []string{
-		"SYNCH", "COLLABORATION RADAR", "OVERALL", "CONVERSATIONALIST",
+		"REFLECT", "COLLABORATION RADAR", "OVERALL", "CONVERSATIONALIST",
 		"Prompt Quality", "Token Economy", "TELEMETRY", "SIGNALS & TIPS",
 		"Name files up front", "Bash", "7.0", // overall 6.97 rounds to 7.0
 	} {

@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/siddham/synch/internal/provider"
+	"github.com/siddham/reflect/internal/provider"
 )
 
 // ID is the source identifier for Claude Code.
@@ -44,6 +44,14 @@ func DefaultBase() string {
 		return ".claude"
 	}
 	return filepath.Join(home, ".claude")
+}
+
+// Available reports whether Claude Code's config root exists on disk. A missing root
+// is the signal that Claude Code isn't installed here (or CLAUDE_CONFIG_DIR points
+// somewhere it shouldn't) — used to greet a first-timer instead of failing blankly.
+func Available() bool {
+	info, err := os.Stat(DefaultBase())
+	return err == nil && info.IsDir()
 }
 
 // ID implements provider.Provider.

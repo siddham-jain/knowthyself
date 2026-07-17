@@ -1,9 +1,9 @@
 package score
 
 import (
-	"github.com/siddham/synch/internal/model"
-	"github.com/siddham/synch/internal/profile"
-	"github.com/siddham/synch/internal/text"
+	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham/reflect/internal/text"
 )
 
 // iterationEfficiency measures convergence: how often the assistant has to stop and

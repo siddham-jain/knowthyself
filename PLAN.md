@@ -1,8 +1,8 @@
-# synch — Implementation Plan (v1)
+# reflect — Implementation Plan (v1)
 
 ## Context
 
-**synch** is a developer-first CLI that reads the session logs AI coding assistants already write to disk and builds a profile of *how* a developer collaborates with AI — not the code they ship, but the quality of their communication. It grades the developer on five dimensions, renders a radar chart + collaboration archetype in the terminal, and surfaces concrete, actionable tips.
+**reflect** is a developer-first CLI that reads the session logs AI coding assistants already write to disk and builds a profile of *how* a developer collaborates with AI — not the code they ship, but the quality of their communication. It grades the developer on five dimensions, renders a radar chart + collaboration archetype in the terminal, and surfaces concrete, actionable tips.
 
 The value of the tool lives or dies on one thing: **the analysis engine must be fair and true.** A grade that is wrong, unreproducible, or biased against how a real person actually types (short prompts, pasted commands, Hindi/Hinglish/English code-switching, half-finished sessions) destroys trust instantly. So v1 is deliberately narrow in surface area and deep in robustness.
 
@@ -20,7 +20,7 @@ The value of the tool lives or dies on one thing: **the analysis engine must be 
 ## Architecture (Go packages)
 
 ```
-cmd/synch/main.go            # CLI: `synch` (sync + TUI), `synch sync`, `synch export`(future), flags (--deep-eval, --json, --since)
+cmd/reflect/main.go            # CLI: `reflect` (sync + TUI), `reflect sync`, `reflect export`(future), flags (--deep-eval, --json, --since)
 internal/provider/           # Provider interface + registry; provider/claude implements Discover+Parse
 internal/model/              # unified Session → Turn → ToolCall (source-agnostic normalized model)
 internal/store/              # Repository interface over SQLite; delta-sync by mtime/size; aggregates
@@ -83,7 +83,7 @@ type Reporter interface { Render(Profile) error }
 
 **Future use-cases this structure unlocks (NOT v1, but validated as drop-ins):**
 - **More providers** — implement `Provider`, register it. The normalized model + all five scorers work unchanged. (Storage for each is documented in the appendix.)
-- **Recruiter / candidate flow** — a candidate runs `synch export` → a portable, integrity-stamped `Profile` artifact; a recruiter tool ingests it and applies a recruiter-defined `Scorer` set / rubric. Both sides reuse the same `Profile` schema and `Scorer`/`Reporter` interfaces — no fork of the engine. (Design the `Profile` schema now with this in mind: stable field names, `schemaVersion`, no TUI-specific data leaking in.)
+- **Recruiter / candidate flow** — a candidate runs `reflect export` → a portable, integrity-stamped `Profile` artifact; a recruiter tool ingests it and applies a recruiter-defined `Scorer` set / rubric. Both sides reuse the same `Profile` schema and `Scorer`/`Reporter` interfaces — no fork of the engine. (Design the `Profile` schema now with this in mind: stable field names, `schemaVersion`, no TUI-specific data leaking in.)
 - **New surfaces** — landing page, web dashboard, CI check: each is just another `Reporter`/consumer of the `Profile` JSON.
 
 ---
@@ -157,7 +157,7 @@ Rank dimensions, match to the nearest archetype signature; ties broken determini
 ---
 
 ## Cache & delta-sync (`internal/store`)
-- SQLite (`modernc.org/sqlite`, pure Go) at `~/.config/synch/store.db` (honor `XDG_CONFIG_HOME`), WAL mode, opened with a busy timeout.
+- SQLite (`modernc.org/sqlite`, pure Go) at `~/.config/reflect/store.db` (honor `XDG_CONFIG_HOME`), WAL mode, opened with a busy timeout.
 - Track per file: `path, mtime, size, last_synced_at`. On sync, `stat` each `*.jsonl`; re-parse only when mtime/size changed. Store normalized turns + precomputed per-session aggregates.
 - **<50ms boot:** if nothing changed, skip parsing entirely and load precomputed aggregates → straight into the TUI.
 
@@ -204,7 +204,7 @@ GoReleaser from a git tag → GitHub release binaries (darwin/linux/windows × a
 6. template tips; then optional `--deep-eval` `InsightEngine`.
 7. GoReleaser distribution.
 
-*(Post-v1, all additive: more `Provider`s, `synch export` + recruiter rubric `Scorer`s, landing page consuming `Profile` + design tokens.)*
+*(Post-v1, all additive: more `Provider`s, `reflect export` + recruiter rubric `Scorer`s, landing page consuming `Profile` + design tokens.)*
 
 ---
 

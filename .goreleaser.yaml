@@ -1,0 +1,127 @@
+# GoReleaser config for reflect — https://goreleaser.com
+#
+# Local check:     goreleaser check
+# Local dry run:   goreleaser release --snapshot --clean   (builds everything, publishes nothing)
+# Real release:    push a tag `vX.Y.Z`; the release workflow runs `goreleaser release --clean`.
+#
+# The Homebrew/Scoop/winget/AUR publishers push to SEPARATE repos and need tokens the
+# default GITHUB_TOKEN can't provide. Before a real release, create those repos and set
+# the CI secrets noted on each block — or comment a block out until you're ready for it.
+version: 2
+
+project_name: reflect
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: reflect
+    main: ./cmd/reflect
+    binary: reflect
+    env:
+      - CGO_ENABLED=0 # pure Go (modernc sqlite) — cross-compiles cleanly everywhere
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X main.version={{ .Version }}
+      - -X main.commit={{ .Commit }}
+      - -X main.date={{ .Date }}
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+checksum:
+  name_template: "checksums.txt"
+
+# Cosign keyless signing of the checksum file (Sigstore). Needs cosign in the runner
+# and `id-token: write` in the workflow; no stored key required.
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+    artifacts: checksum
+    output: true
+
+# --- Homebrew (macOS + Linux) — needs repo `siddham/homebrew-tap` + secret TAP_GITHUB_TOKEN
+brews:
+  - repository:
+      owner: siddham
+      name: homebrew-tap
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/siddham/reflect"
+    description: "See how you actually collaborate with your AI coding assistant."
+    license: "MIT"
+    install: |
+      bin.install "reflect"
+    test: |
+      system "#{bin}/reflect", "--version"
+
+# --- Scoop (Windows) — needs repo `siddham/scoop-bucket` + secret TAP_GITHUB_TOKEN
+scoops:
+  - repository:
+      owner: siddham
+      name: scoop-bucket
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/siddham/reflect"
+    description: "See how you actually collaborate with your AI coding assistant."
+    license: "MIT"
+
+# --- winget (Windows) — commits to a fork `siddham/winget-pkgs` and opens a PR upstream.
+# Needs secret TAP_GITHUB_TOKEN.
+winget:
+  - name: reflect
+    publisher: Siddham
+    short_description: "See how you actually collaborate with your AI coding assistant."
+    license: "MIT"
+    homepage: "https://github.com/siddham/reflect"
+    package_identifier: Siddham.reflect
+    repository:
+      owner: siddham
+      name: winget-pkgs
+      branch: "reflect-{{ .Version }}"
+      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+      pull_request:
+        enabled: true
+        draft: false
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
+# --- AUR (Arch) — publishes a binary PKGBUILD over SSH. Needs an AUR account and the
+# private key in secret AUR_KEY.
+aurs:
+  - name: reflect-bin
+    homepage: "https://github.com/siddham/reflect"
+    description: "See how you actually collaborate with your AI coding assistant."
+    maintainers:
+      - "Siddham Jain <abhishek.shah5486@gmail.com>"
+    license: "MIT"
+    private_key: "{{ .Env.AUR_KEY }}"
+    git_url: "ssh://aur@aur.archlinux.org/reflect-bin.git"
+    package: |-
+      install -Dm755 "./reflect" "${pkgdir}/usr/bin/reflect"
+      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/reflect/LICENSE"
+
+release:
+  github:
+    owner: siddham
+    name: reflect

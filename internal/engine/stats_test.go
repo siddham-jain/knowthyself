@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siddham/synch/internal/model"
+	"github.com/siddham/reflect/internal/model"
 )
 
 func TestComputeStatsAndTraits(t *testing.T) {

@@ -7,7 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 func profileWithSessions() profile.Profile {

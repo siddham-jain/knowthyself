@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/siddham/synch/internal/model"
-	"github.com/siddham/synch/internal/provider"
-	"github.com/siddham/synch/internal/text"
+	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham/reflect/internal/provider"
+	"github.com/siddham/reflect/internal/text"
 )
 
 // Parse opens the session file and parses it defensively. A malformed file yields
@@ -26,7 +26,7 @@ func (p *Provider) Parse(ctx context.Context, ref provider.SessionRef) (model.Se
 	return parseReader(ctx, f, ref.SessionID)
 }
 
-// rawRecord is the shared envelope of a Claude Code JSONL line. Only fields synch
+// rawRecord is the shared envelope of a Claude Code JSONL line. Only fields reflect
 // uses are declared; unknown fields are tolerated by encoding/json.
 type rawRecord struct {
 	Type             string          `json:"type"`

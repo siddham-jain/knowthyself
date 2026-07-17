@@ -4,7 +4,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // viewMode is the active tab in the interactive dashboard.

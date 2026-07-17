@@ -4,11 +4,11 @@ import (
 	"encoding/json"
 	"io"
 
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // JSON renders the Profile as indented JSON to a writer. It's the machine-readable
-// surface (`synch --json`) and the contract future consumers (web, recruiter
+// surface (`reflect --json`) and the contract future consumers (web, recruiter
 // portal) parse — hence stable field names and profile.SchemaVersion.
 type JSON struct {
 	W io.Writer

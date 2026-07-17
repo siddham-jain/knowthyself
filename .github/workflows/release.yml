@@ -1,0 +1,37 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write # create the GitHub Release
+  id-token: write # cosign keyless signing (Sigstore OIDC)
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so GoReleaser can build the changelog
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - uses: sigstore/cosign-installer@v3
+
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          # Default token creates the release on this repo.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PAT (repo scope) that can push to the tap/bucket/winget-fork repos.
+          # Set this in repo Settings → Secrets before the first release.
+          TAP_GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN }}
+          # AUR SSH private key. Omit (and comment out the aurs block) if not using AUR.
+          AUR_KEY: ${{ secrets.AUR_KEY }}

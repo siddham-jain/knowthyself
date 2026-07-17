@@ -1,8 +1,8 @@
 package score
 
 import (
-	"github.com/siddham/synch/internal/model"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // minInputTokens is the fairness floor for Token Economy: tiny sessions don't carry

@@ -15,8 +15,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 
-	"github.com/siddham/synch/internal/design"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // Reporter renders the dashboard to a writer (stdout by default; injectable for
@@ -31,6 +31,7 @@ func New() Reporter { return Reporter{W: os.Stdout} }
 // padding). See panelBox / textArea.
 const (
 	minWidth   = 46 // below this the terminal is too narrow to lay out
+	minHeight  = 12 // below this we show a "make me taller" notice instead of a broken frame
 	maxWidth   = 96 // cap so the dashboard stays dense, not sprawling
 	twoColMin  = 74 // at/above this we place panels side by side; below, we stack
 	staticW    = 78 // width of the non-interactive frame
@@ -84,19 +85,19 @@ func textArea(total int) int { return total - 4 }
 // --- shared styled components (width-driven; used by static + interactive views) ---
 
 func header(p profile.Profile, w int) string {
-	title := design.Header.Render("SYNCH")
+	title := design.Header.Render("REFLECT")
 	sub := design.Dim.Render(" // AI COLLABORATION PROFILE")
 	meta := design.Label.Render(fmt.Sprintf("SRC %s   GEN %s",
 		strings.ToUpper(p.Source), p.GeneratedAt.Format("2006-01-02 15:04")))
 	top := lipgloss.JoinHorizontal(lipgloss.Bottom, title, sub)
 	// Drop the tagline, then the meta, as width shrinks.
 	if w < lipgloss.Width(top)+lipgloss.Width(meta)+2 {
-		top = design.Header.Render("SYNCH")
+		top = design.Header.Render("REFLECT")
 	}
 	line := lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("━", w))
 	gap := w - lipgloss.Width(top) - lipgloss.Width(meta)
 	if gap < 1 {
-		// Too tight even for SYNCH + meta: keep just the wordmark.
+		// Too tight even for REFLECT + meta: keep just the wordmark.
 		return top + "\n" + line
 	}
 	return top + strings.Repeat(" ", gap) + meta + "\n" + line
@@ -105,6 +106,11 @@ func header(p profile.Profile, w int) string {
 func radarPanelWith(p profile.Profile, opt radarOpts, total int) string {
 	area := textArea(total)
 	radarCells := clampInt(area-legendCols-2, 12, 24)
+	// A braille cell is 4 dots tall, so rendered rows ≈ radarCells/2. Cap the cells
+	// when height is scarce so the chart shrinks instead of overflowing the screen.
+	if opt.maxRows > 0 {
+		radarCells = clampInt(radarCells, 8, maxInt(8, 2*opt.maxRows))
+	}
 	dots := radarCells * 2
 	opt.numbers = true
 	radar := radarBlockWith(p.Dimensions, dots, dots, opt)

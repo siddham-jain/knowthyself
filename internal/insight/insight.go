@@ -7,7 +7,7 @@ package insight
 import (
 	"context"
 
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // Engine turns a computed Profile into a list of insights (tips).

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // Heuristic is the default, deterministic Engine. It turns the retained evidence

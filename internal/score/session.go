@@ -1,6 +1,6 @@
 package score
 
-import "github.com/siddham/synch/internal/model"
+import "github.com/siddham/reflect/internal/model"
 
 // view holds the per-session slices the scorers need, computed once.
 type view struct {

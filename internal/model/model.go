@@ -3,7 +3,7 @@
 // Codex, OpenCode, Gemini later) parses its own on-disk format into these types,
 // and everything downstream (scoring, reporting) depends only on this model.
 //
-// This is one of the two load-bearing contracts in synch (the other is
+// This is one of the two load-bearing contracts in reflect (the other is
 // profile.Profile). Keep it stable and provider-neutral: nothing here may leak a
 // detail specific to one tool's log format.
 package model

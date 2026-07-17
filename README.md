@@ -1,17 +1,53 @@
-# synch
+# reflect
 
 A developer-first CLI that reads the session logs your AI coding assistants already
-write to disk and builds a profile of **how you collaborate with AI** — not the code
+write to disk and shows you **how you actually collaborate with AI** — not the code
 you ship, but the quality of your communication.
 
-`synch` grades you across five deterministic dimensions, renders a radar chart and a
+`reflect` grades you across five deterministic dimensions, renders a radar chart and a
 collaboration archetype in the terminal, and surfaces concrete, actionable tips.
+Everything runs locally; nothing leaves your machine unless you opt into `--deep-eval`
+with your own API key.
 
-## Status
+## Install
 
-v1 in development. Source: **Claude Code** (`~/.claude/projects/*/*.jsonl`).
-Deterministic, local, private — nothing leaves your machine unless you opt into
-`--deep-eval` with your own API key.
+**macOS / Linux** — universal one-liner (detects your OS/arch, verifies the checksum):
+
+```sh
+curl -fsSL https://<domain>/install.sh | sh
+```
+
+**Homebrew** (macOS + Linux):
+
+```sh
+brew install siddham/tap/reflect
+```
+
+**Windows** — PowerShell:
+
+```powershell
+irm https://<domain>/install.ps1 | iex
+```
+
+…or `winget install Siddham.reflect` · `scoop install reflect`
+
+**Arch (AUR):** `yay -S reflect-bin`
+
+**From source** (needs Go 1.25+):
+
+```sh
+go install github.com/siddham/reflect/cmd/reflect@latest
+```
+
+> Prebuilt binaries, Homebrew/Scoop/winget/AUR manifests, and checksums are produced
+> by [GoReleaser](https://goreleaser.com) on each tagged release (see `.goreleaser.yaml`).
+> Replace `<domain>` once the install scripts are hosted.
+
+## First run
+
+`reflect` reads `~/.claude` (override with `CLAUDE_CONFIG_DIR`), profiles your history
+locally in a few seconds, and opens the dashboard on the persona **Reveal**. No Claude
+history yet? It'll greet you instead of erroring.
 
 ## Dimensions
 
@@ -21,18 +57,25 @@ Deterministic, local, private — nothing leaves your machine unless you opt int
 - **Context Management** — compaction hygiene, `/clear` discipline, cache reuse.
 - **Token Economy** — cache-hit rate, output/input ratio, tokens per task.
 
-## Build
+## Usage
 
+```sh
+reflect            # sync + open the interactive TUI dashboard
+reflect --json     # emit the raw Profile (piped/non-TTY also renders a static frame)
+reflect --sync     # refresh the local cache and print a summary, then exit
+reflect --version  # print version
 ```
-make build     # -> ./synch
-make test      # unit + golden tests
-./synch        # sync + open the interactive TUI dashboard
-./synch --json # emit the raw Profile (piped/non-TTY also renders a static frame)
+
+Build from a checkout:
+
+```sh
+make build   # -> ./reflect
+make test    # unit + golden tests
 ```
 
 ## Interactive dashboard
 
-On a terminal, `synch` opens an industrial-instrument dashboard that boots with a
+On a terminal, `reflect` opens an industrial-instrument dashboard that boots with a
 short power-on animation, then lets you explore:
 
 | Key | Action |
@@ -49,7 +92,8 @@ short power-on animation, then lets you explore:
 - **Trends** — chronological sparklines per dimension ("am I improving?") + a
   session timeline.
 
-Piped or non-interactive output falls back to a single static frame.
+The layout reflows to the terminal size and never overflows the screen; piped or
+non-interactive output falls back to a single static frame.
 
 ## Design
 

@@ -4,8 +4,8 @@ import (
 	"math"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/synch/internal/design"
-	"github.com/siddham/synch/internal/profile"
+	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham/reflect/internal/profile"
 )
 
 // radarOpts controls interactive/animated rendering of the radar.
@@ -13,6 +13,7 @@ type radarOpts struct {
 	fraction float64 // 0..1 scale on the data polygon, for the boot "inflate" sweep
 	selected int     // index of the highlighted axis (-1 for none)
 	numbers  bool    // stamp axis numbers on the chart perimeter
+	maxRows  int     // cap on rendered radar rows (0 = width-driven only), for short terminals
 }
 
 // radarBlock renders the static chart (used by the static fallback and tests).

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/synch/internal/design"
+	"github.com/siddham/reflect/internal/design"
 )
 
 // sparkRunes are the eight vertical block levels used for sparklines.
