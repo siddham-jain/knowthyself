@@ -60,68 +60,74 @@ signs:
     artifacts: checksum
     output: true
 
-# --- Homebrew (macOS + Linux) — needs repo `siddham/homebrew-tap` + secret TAP_GITHUB_TOKEN
-brews:
-  - repository:
-      owner: siddham
-      name: homebrew-tap
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-    homepage: "https://github.com/siddham/reflect"
-    description: "See how you actually collaborate with your AI coding assistant."
-    license: "MIT"
-    install: |
-      bin.install "reflect"
-    test: |
-      system "#{bin}/reflect", "--version"
-
-# --- Scoop (Windows) — needs repo `siddham/scoop-bucket` + secret TAP_GITHUB_TOKEN
-scoops:
-  - repository:
-      owner: siddham
-      name: scoop-bucket
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-    homepage: "https://github.com/siddham/reflect"
-    description: "See how you actually collaborate with your AI coding assistant."
-    license: "MIT"
-
-# --- winget (Windows) — commits to a fork `siddham/winget-pkgs` and opens a PR upstream.
-# Needs secret TAP_GITHUB_TOKEN.
-winget:
-  - name: reflect
-    publisher: Siddham
-    short_description: "See how you actually collaborate with your AI coding assistant."
-    license: "MIT"
-    homepage: "https://github.com/siddham/reflect"
-    package_identifier: Siddham.reflect
-    repository:
-      owner: siddham
-      name: winget-pkgs
-      branch: "reflect-{{ .Version }}"
-      token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-      pull_request:
-        enabled: true
-        draft: false
-        base:
-          owner: microsoft
-          name: winget-pkgs
-          branch: master
-
-# --- AUR (Arch) — publishes a binary PKGBUILD over SSH. Needs an AUR account and the
-# private key in secret AUR_KEY.
-aurs:
-  - name: reflect-bin
-    homepage: "https://github.com/siddham/reflect"
-    description: "See how you actually collaborate with your AI coding assistant."
-    maintainers:
-      - "Siddham Jain <abhishek.shah5486@gmail.com>"
-    license: "MIT"
-    private_key: "{{ .Env.AUR_KEY }}"
-    git_url: "ssh://aur@aur.archlinux.org/reflect-bin.git"
-    package: |-
-      install -Dm755 "./reflect" "${pkgdir}/usr/bin/reflect"
-      install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/reflect/LICENSE"
+# The publisher blocks below (Homebrew / Scoop / winget / AUR) push to SEPARATE
+# repos and need a TAP_GITHUB_TOKEN (and AUR_KEY) the default GITHUB_TOKEN can't
+# provide. They're disabled so the binary-only release + npm distribution work
+# out of the box. To enable one: uncomment it, create the referenced repo, and
+# set the secret in the repo's Settings → Secrets.
+#
+# # --- Homebrew (macOS + Linux) — needs repo `siddham-jain/homebrew-tap` + secret TAP_GITHUB_TOKEN
+# brews:
+#   - repository:
+#       owner: siddham-jain
+#       name: homebrew-tap
+#       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+#     homepage: "https://github.com/siddham-jain/reflect"
+#     description: "See how you actually collaborate with your AI coding assistant."
+#     license: "MIT"
+#     install: |
+#       bin.install "reflect"
+#     test: |
+#       system "#{bin}/reflect", "--version"
+#
+# # --- Scoop (Windows) — needs repo `siddham-jain/scoop-bucket` + secret TAP_GITHUB_TOKEN
+# scoops:
+#   - repository:
+#       owner: siddham-jain
+#       name: scoop-bucket
+#       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+#     homepage: "https://github.com/siddham-jain/reflect"
+#     description: "See how you actually collaborate with your AI coding assistant."
+#     license: "MIT"
+#
+# # --- winget (Windows) — commits to a fork `siddham-jain/winget-pkgs` and opens a PR upstream.
+# # Needs secret TAP_GITHUB_TOKEN.
+# winget:
+#   - name: reflect
+#     publisher: Siddham
+#     short_description: "See how you actually collaborate with your AI coding assistant."
+#     license: "MIT"
+#     homepage: "https://github.com/siddham-jain/reflect"
+#     package_identifier: Siddham.reflect
+#     repository:
+#       owner: siddham-jain
+#       name: winget-pkgs
+#       branch: "reflect-{{ .Version }}"
+#       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
+#       pull_request:
+#         enabled: true
+#         draft: false
+#         base:
+#           owner: microsoft
+#           name: winget-pkgs
+#           branch: master
+#
+# # --- AUR (Arch) — publishes a binary PKGBUILD over SSH. Needs an AUR account and the
+# # private key in secret AUR_KEY.
+# aurs:
+#   - name: reflect-bin
+#     homepage: "https://github.com/siddham-jain/reflect"
+#     description: "See how you actually collaborate with your AI coding assistant."
+#     maintainers:
+#       - "Siddham Jain <abhishek.shah5486@gmail.com>"
+#     license: "MIT"
+#     private_key: "{{ .Env.AUR_KEY }}"
+#     git_url: "ssh://aur@aur.archlinux.org/reflect-bin.git"
+#     package: |-
+#       install -Dm755 "./reflect" "${pkgdir}/usr/bin/reflect"
+#       install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/reflect/LICENSE"
 
 release:
   github:
-    owner: siddham
+    owner: siddham-jain
     name: reflect

@@ -1,9 +1,15 @@
 # Binaries
+/reflect
 /synch
 /dist/
 *.exe
 *.test
 *.out
+
+# npm wrapper
+/npm/node_modules/
+/npm/bin/reflect
+/npm/bin/reflect.exe
 
 # Go
 /vendor/

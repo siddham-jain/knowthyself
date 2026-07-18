@@ -11,6 +11,7 @@ editor, or agent can pick up with full context.
 - **Playful cold-start screens** — instead of a bare error: a wide-eyed reaction for "no Claude on this machine" (with a get-Claude / `CLAUDE_CONFIG_DIR` nudge) and an empty-radar "you're early" for not-enough-history. Interactive TTY only; piped/JSON stays a plain error. `internal/tui/onboarding.go`, wired in `cmd/reflect/main.go`.
 - **`--version` flag** — prints version/commit/date injected at release time via ldflags. `cmd/reflect/main.go` (`main.version`).
 - **Distribution** — `.goreleaser.yaml` (cross-compiled binaries for darwin/linux/windows × amd64/arm64, cosign-signed checksums, Homebrew + Scoop + winget + AUR publishers), `.github/workflows/release.yml` (tag-triggered), `install.sh` + `install.ps1` (banner → checksum-verified download → first-run prompt), `LICENSE` (MIT).
+- **npm distribution** — `npm/` wrapper package published as `knowthyself` (the bare `reflect` name is taken on npm). `npm i -g knowthyself` / `npx knowthyself` installs the `reflect` command; `scripts/postinstall.js` downloads the matching prebuilt binary from the GitHub Release for this OS/arch, `bin/run.js` execs it. No Go toolchain needed on the user's machine.
 - **`claude.Available()`** — detects whether `~/.claude` exists, to drive the no-Claude greeting. `internal/provider/claude/claude.go`.
 - Tests: `TestNeverOverflowsHeight` (the alt-screen never renders more lines than the terminal), `TestTooShortMessage`.
 - **The Reveal** — a first-run persona portrait the boot animation lands on, built to make the very first run irresistible (identity + awe, zero judgment). Combines the collaboration archetype ("YOU ARE A CONDUCTOR") with a "by the numbers" band and deterministic trait badges. `internal/tui/reveal.go`.
@@ -27,6 +28,13 @@ editor, or agent can pick up with full context.
 ---
 
 ## Work Log
+
+### 2026-07-18 — npm distribution + release owner fix
+- **What:** Added an `npm/` wrapper package (`knowthyself`) that downloads the prebuilt `reflect` binary from GitHub Releases on postinstall. Fixed the `siddham` → `siddham-jain` owner mismatch in `.goreleaser.yaml` (`release.github.owner`) so releases and download URLs hit the real repo, and commented out the Homebrew/Scoop/winget/AUR publisher blocks (they need a `TAP_GITHUB_TOKEN`/`AUR_KEY` not yet configured) so the first binary-only release succeeds. Gitignored the `/reflect` build artifact.
+- **Why:** Enable `npm i -g knowthyself` / `npx knowthyself` without shipping a Go toolchain.
+- **State:** Wrapper + config committed. Not yet released/published — needs (1) push tag `v0.1.0` to trigger the release workflow, then (2) `npm publish` from `npm/`. Package version (0.1.0) must equal the release tag.
+- **Notes:** `go.mod` module path is still `github.com/siddham/reflect` (internal only, doesn't affect goreleaser builds); `go install` from the network would need it changed to `siddham-jain`, but npm/Homebrew/etc. don't care.
+
 
 Chronological notes for cross-session context. Newest first.
 

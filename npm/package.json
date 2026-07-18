@@ -1,0 +1,49 @@
+{
+  "name": "knowthyself",
+  "version": "0.1.0",
+  "description": "See how you actually collaborate with your AI coding assistant — a terminal dashboard. Installs the `reflect` command.",
+  "bin": {
+    "reflect": "bin/run.js",
+    "knowthyself": "bin/run.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/postinstall.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "darwin",
+    "linux",
+    "win32"
+  ],
+  "cpu": [
+    "x64",
+    "arm64"
+  ],
+  "files": [
+    "bin/run.js",
+    "scripts/postinstall.js",
+    "README.md"
+  ],
+  "keywords": [
+    "reflect",
+    "cli",
+    "tui",
+    "claude",
+    "ai",
+    "coding-assistant",
+    "analytics",
+    "dashboard"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siddham-jain/reflect.git"
+  },
+  "homepage": "https://github.com/siddham-jain/reflect#readme",
+  "bugs": {
+    "url": "https://github.com/siddham-jain/reflect/issues"
+  },
+  "license": "MIT",
+  "author": "Siddham Jain <abhishek.shah5486@gmail.com>"
+}
