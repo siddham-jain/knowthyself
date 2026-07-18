@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"time"
 
 	"golang.org/x/term"
@@ -72,6 +73,24 @@ func run(args []string) error {
 			claude.DefaultBase())
 	}
 
+	// First run on a real terminal: ask before profiling, so a newcomer opts in to
+	// meeting themselves instead of being dropped straight into the dashboard. Asked
+	// only once — running the command again is consent enough.
+	if greet {
+		marker := firstRunMarker(*storePath)
+		if !fileExists(marker) {
+			runNow, err := tui.RunFirstRunPrompt(termWidth())
+			if err != nil {
+				return err
+			}
+			_ = markFirstRun(marker)
+			if !runNow {
+				tui.RenderMaybeLater(os.Stdout, termWidth())
+				return nil
+			}
+		}
+	}
+
 	ctx := context.Background()
 	p, err := provider.Get(*sourceID)
 	if err != nil {
@@ -123,6 +142,24 @@ func run(args []string) error {
 		r = tui.New()
 	}
 	return r.Render(prof)
+}
+
+// firstRunMarker is the sentinel that records the welcome prompt has been shown. It
+// lives beside the cache so it travels with reflect's state, not the working dir.
+func firstRunMarker(storePath string) string {
+	return filepath.Join(filepath.Dir(storePath), ".welcomed")
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
+}
+
+func markFirstRun(path string) error {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte("welcomed\n"), 0o644)
 }
 
 // termWidth returns the current terminal width, falling back to a sensible default

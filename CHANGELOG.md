@@ -6,6 +6,7 @@ editor, or agent can pick up with full context.
 ## [Unreleased]
 
 ### Added
+- **First-run consent gate** — the first time `reflect` runs on a real terminal it asks "Meet how you work with AI?" with two choices: run the analysis now, or "No, I don't want to know" (which prints how to run it later and exits without reading anything). Shown once; a `.welcomed` sentinel beside the cache records it. `internal/tui/firstrun.go`, wired in `cmd/reflect/main.go`.
 - **Rebrand to `reflect`** — the tool, module path (`github.com/siddham/reflect`), binary, command dir (`cmd/reflect`), cache path (`…/reflect/store.db`), and all user-facing copy. "know how you build."
 - **`reflect` wordmark art** — a block-letter wordmark with a dimmed, vertically mirrored reflection beneath a waterline (the name made literal). Reused by the installer banner and the cold-start screens. `internal/tui/art.go`.
 - **Playful cold-start screens** — instead of a bare error: a wide-eyed reaction for "no Claude on this machine" (with a get-Claude / `CLAUDE_CONFIG_DIR` nudge) and an empty-radar "you're early" for not-enough-history. Interactive TTY only; piped/JSON stays a plain error. `internal/tui/onboarding.go`, wired in `cmd/reflect/main.go`.
