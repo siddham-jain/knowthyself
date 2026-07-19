@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="assets/logo.png" alt="knowthyself" width="320" />
+<img src="assets/logo.png" alt="knowthyself" width="150" height="150" />
 
 ### See how you actually collaborate with your AI coding assistant.
 
