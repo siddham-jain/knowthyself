@@ -1,104 +1,181 @@
-# reflect
+<div align="center">
 
-A developer-first CLI that reads the session logs your AI coding assistants already
-write to disk and shows you **how you actually collaborate with AI** — not the code
-you ship, but the quality of your communication.
+<img src="assets/logo.png" alt="reflect" width="340" />
 
-`reflect` grades you across five deterministic dimensions, renders a radar chart and a
-collaboration archetype in the terminal, and surfaces concrete, actionable tips.
-Everything runs locally; nothing leaves your machine unless you opt into `--deep-eval`
-with your own API key.
+### See how you actually collaborate with your AI coding assistant.
+
+reflect reads the session logs your AI coding tools already keep on disk and turns them into a clear picture of how you work. Not the code you ship, but the quality of the conversation behind it: your strengths, your habits, and the shape of your collaboration.
+
+[![npm](https://img.shields.io/npm/v/knowthyself?color=e08a3c&label=npm)](https://www.npmjs.com/package/knowthyself)
+[![license](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![built with Go](https://img.shields.io/badge/built%20with-Go-00ADD8)](https://go.dev)
+
+</div>
+
+## What it does
+
+Every time you work with an AI coding assistant, it writes a full transcript to disk. reflect reads those transcripts locally, grades five dimensions of how you collaborate, and renders the result as an interactive terminal dashboard: a radar chart, a collaboration archetype that names your style, and concrete tips for getting more out of the tool.
+
+Everything runs on your machine. Nothing leaves it unless you explicitly opt into `--deep-eval` with your own API key.
+
+## Demo
+
+<!--
+  Add the demo video here. A short edited clip with music works well.
+  Two easy options:
+    1. Drag an .mp4 into a GitHub issue or PR comment, then paste the
+       generated https://github.com/user-attachments/... link below
+       (GitHub plays uploaded mp4s inline).
+    2. Save a GIF at assets/demo.gif and reference it:
+       <img src="assets/demo.gif" alt="reflect demo" width="820">
+-->
+
+> Demo video coming soon.
+
+## Screens
+
+Screenshots of each screen will live here. Save the images under `assets/` and uncomment the tags below.
+
+### The Reveal
+
+The first thing you see. The boot animation resolves into a persona portrait: your collaboration archetype, your numbers, and your trait badges.
+
+<!-- <img src="assets/reveal.png" alt="The Reveal screen" width="820"> -->
+
+> Screenshot coming soon.
+
+### Overview
+
+A radar of the five dimensions with an evidence inspector. Select any axis to see the exact counts behind its score, plus the matching tip.
+
+<!-- <img src="assets/overview.png" alt="Overview screen" width="820"> -->
+
+> Screenshot coming soon.
+
+### Sessions
+
+Drill into any single session for its own mini radar and per dimension bars.
+
+<!-- <img src="assets/sessions.png" alt="Sessions screen" width="820"> -->
+
+> Screenshot coming soon.
+
+### Trends
+
+Chronological sparklines per dimension, so you can answer the one question that matters: am I getting better?
+
+<!-- <img src="assets/trends.png" alt="Trends screen" width="820"> -->
+
+> Screenshot coming soon.
 
 ## Install
 
-**macOS / Linux** — universal one-liner (detects your OS/arch, verifies the checksum):
+### npm (recommended)
 
 ```sh
-curl -fsSL https://<domain>/install.sh | sh
+npm install -g knowthyself
+reflect
 ```
 
-**Homebrew** (macOS + Linux):
+Or run it once without installing anything:
 
 ```sh
-brew install siddham/tap/reflect
+npx knowthyself
 ```
 
-**Windows** — PowerShell:
+The package installs the `reflect` command. On install it downloads the prebuilt binary for your platform from the GitHub release, so no Go toolchain is required.
 
-```powershell
-irm https://<domain>/install.ps1 | iex
-```
+### Direct download
 
-…or `winget install Siddham.reflect` · `scoop install reflect`
+Grab a prebuilt binary for your OS and architecture from the [releases page](https://github.com/siddham-jain/reflect/releases), unpack the archive, and put `reflect` on your PATH.
 
-**Arch (AUR):** `yay -S reflect-bin`
+### From source
 
-**From source** (needs Go 1.25+):
+Requires Go 1.25 or newer.
 
 ```sh
-go install github.com/siddham/reflect/cmd/reflect@latest
+git clone https://github.com/siddham-jain/reflect
+cd reflect
+make build   # produces ./reflect
 ```
 
-> Prebuilt binaries, Homebrew/Scoop/winget/AUR manifests, and checksums are produced
-> by [GoReleaser](https://goreleaser.com) on each tagged release (see `.goreleaser.yaml`).
-> Replace `<domain>` once the install scripts are hosted.
+More package managers (Homebrew, Scoop, winget, AUR) are planned.
 
 ## First run
 
-`reflect` reads `~/.claude` (override with `CLAUDE_CONFIG_DIR`), profiles your history
-locally in a few seconds, and opens the dashboard on the persona **Reveal**. No Claude
-history yet? It'll greet you instead of erroring.
+reflect reads `~/.claude` by default. Override the location with `CLAUDE_CONFIG_DIR`.
 
-## Dimensions
+The first time you run it on a real terminal, reflect asks whether you want to profile now before it reads anything. Choose to see your results, or decline and it exits without touching your history. After that first prompt it goes straight to the dashboard.
 
-- **Prompt Quality** — do you give file paths, error traces, concrete asks?
-- **Iteration Efficiency** — turns-to-resolution, clarification loops, re-prompts.
-- **Tool Leverage** — tool diversity, sub-agents, skills, slash commands.
-- **Context Management** — compaction hygiene, `/clear` discipline, cache reuse.
-- **Token Economy** — cache-hit rate, output/input ratio, tokens per task.
+If there is no Claude history yet, reflect greets you with a friendly starting screen instead of an error.
 
 ## Usage
 
 ```sh
-reflect            # sync + open the interactive TUI dashboard
-reflect --json     # emit the raw Profile (piped/non-TTY also renders a static frame)
-reflect --sync     # refresh the local cache and print a summary, then exit
-reflect --version  # print version
+reflect            # sync, then open the interactive dashboard
+reflect --json     # print the raw profile as JSON (piped output stays scriptable)
+reflect --sync     # refresh the local cache, print a summary, then exit
+reflect --version  # print the version
 ```
 
-Build from a checkout:
-
-```sh
-make build   # -> ./reflect
-make test    # unit + golden tests
-```
-
-## Interactive dashboard
-
-On a terminal, `reflect` opens an industrial-instrument dashboard that boots with a
-short power-on animation, then lets you explore:
+On a real terminal, reflect opens a dashboard that boots with a short power on animation and then lets you explore:
 
 | Key | Action |
-|-----|--------|
-| `↑ ↓` / `j k` | move the cursor (select a dimension or session) |
-| `← →` / `tab` | switch view |
-| `1 2 3` | jump to Overview / Sessions / Trends |
+|:---:|:-------|
+| `↑` `↓` or `j` `k` | move the cursor (select a dimension or session) |
+| `←` `→` or `tab` | switch view |
+| `1` `2` `3` | jump to Overview, Sessions, or Trends |
 | `r` | replay the boot animation |
-| `q` / `esc` | quit |
+| `q` or `esc` | quit |
 
-- **Overview** — radar + an *evidence inspector*: select any axis to see the exact
-  counts behind its score (auditable by design) plus the matching tip.
-- **Sessions** — drill into any session for its own mini-radar and per-dimension bars.
-- **Trends** — chronological sparklines per dimension ("am I improving?") + a
-  session timeline.
+The layout reflows to your terminal size and never overflows the screen. Piped or non interactive output falls back to a single static frame.
 
-The layout reflows to the terminal size and never overflows the screen; piped or
-non-interactive output falls back to a single static frame.
+## The five dimensions
 
-## Design
+reflect grades every session on five deterministic dimensions and averages them into an overall score.
 
-Fair and true by construction: scores are 100% deterministic heuristics, computed on
-**language-agnostic structural signals** (paths, code fences, error patterns,
-turn-shape) so prompts in English, Hindi, or Hinglish are graded on communication
-quality, not English proficiency. Every score is explainable — the underlying counts
-are retained and shown.
+| Dimension | What it measures |
+|:----------|:-----------------|
+| **Prompt Quality** | Whether your prompts carry concrete signal: file paths, error traces, and specific asks. |
+| **Iteration Efficiency** | How directly you reach a result: turns to resolution, clarification loops, and re prompts. |
+| **Tool Leverage** | How well you use the platform: tool diversity, sub agents, skills, and slash commands. |
+| **Context Management** | Your context hygiene: compaction, `/clear` discipline, and cache reuse. |
+| **Token Economy** | How much value you extract per token: cache hit rate, output to input ratio, and tokens per task. |
+
+Every score is explainable. reflect keeps the underlying counts and shows them in the evidence inspector, so no number is a black box.
+
+## Collaboration archetypes
+
+After grading the dimensions, reflect names the persona whose signature best matches the shape of your radar. The match uses cosine similarity over the dimensions it actually graded, so the result is deterministic, reproducible, and never rests on a single axis in isolation.
+
+| Archetype | Signature |
+|:----------|:----------|
+| **Architect** | You plan in precise strokes. Grounded briefs and clean context, with the work specced before a line is written. |
+| **Surgeon** | Precise, minimal incisions. You say exactly what is needed and land it in a few clean moves. |
+| **Conductor** | You direct a whole orchestra of tools, agents, and servers, delegating the work in concert. |
+| **Pathfinder** | You map unknown territory by probing. You read, search, and trace until its shape appears. |
+| **Economist** | You extract maximum signal per token. Cache savvy, context stable, and quietly cost lean. |
+| **Marathoner** | You go deep for hours and keep context clean the whole way. Sustained, disciplined sessions. |
+| **Conversationalist** | You think out loud with AI. Fast, iterative, exploratory. You get there by dialogue, not by spec. |
+| **Generalist** | No single mode. You are fluent across the board and adapt to whatever the task needs. |
+
+Before there is enough history to judge, reflect shows a **Newcomer** placeholder and invites you to come back once you have collaborated a bit more.
+
+## How it works
+
+reflect is fair and true by construction. Scores are one hundred percent deterministic heuristics computed on language agnostic structural signals: paths, code fences, error patterns, and turn shape. That means prompts written in English, Hindi, or Hinglish are graded on communication quality, not on English proficiency.
+
+The local cache lives next to your config so repeat runs are fast. The optional `--deep-eval` flag uses your own API key to phrase qualitative tips more naturally. It never changes a score.
+
+## Contributing
+
+Issues and pull requests are welcome. Build and test locally with:
+
+```sh
+make build   # produces ./reflect
+make test    # unit and golden tests
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

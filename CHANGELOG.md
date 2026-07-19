@@ -22,6 +22,7 @@ editor, or agent can pick up with full context.
 - Tests: archetype shape-matching + trait/stat computation + reveal render/reflow across a width sweep.
 
 ### Changed
+- **Professional README rewrite** — logo-led header with badges, a clear "what it does" section, npm-first install, placeholder slots for a demo video and per-screen TUI screenshots, and a dedicated "Collaboration archetypes" section (all eight personas) placed after the core docs. Dash-free prose. Fixed the owner references to `siddham-jain`. New `assets/` folder with a guide for the media files to drop in. `README.md`, `assets/README.md`.
 - **Responsive TUI** — the dashboard now budgets vertical space: the radar shrinks to a height cap, the session list and overview detail row fit to the terminal height, a "terminal too short" notice mirrors the too-narrow one, and every frame is hard-clipped to the viewport. This fixes the bug where a small terminal rendered a partial frame and corrupted the scrollback until a manual resize. `internal/tui/view.go`, `radar.go`, `tui.go`.
 - `Archetype` gains a `Traits []string` field; archetype blurbs rewritten as punchier identity lines.
 - Boot animation now resolves to the reveal; the graded dashboard (overview/sessions/trends) is one keystroke away (`→`/any key), with the archetype-jump keys still honored.
