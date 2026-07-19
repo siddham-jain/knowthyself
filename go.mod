@@ -1,4 +1,4 @@
-module github.com/siddham/reflect
+module github.com/siddham-jain/knowthyself
 
 go 1.25.6
 

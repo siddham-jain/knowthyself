@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // Heuristic is the default, deterministic Engine. It turns the retained evidence

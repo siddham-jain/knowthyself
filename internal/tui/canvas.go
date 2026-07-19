@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/design"
 )
 
 // Layer identifies what a lit cell represents, so the renderer can color it. Higher

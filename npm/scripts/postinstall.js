@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 "use strict";
 
-// Downloads the prebuilt `reflect` binary for this OS/arch from the matching
+// Downloads the prebuilt `knowthyself` binary for this OS/arch from the matching
 // GitHub Release (produced by GoReleaser) and drops it next to bin/run.js.
 //
 // Skip the download with KNOWTHYSELF_SKIP_DOWNLOAD=1 (e.g. CI, or building from
@@ -12,7 +12,7 @@ const os = require("os");
 const path = require("path");
 const { execFileSync } = require("child_process");
 
-const REPO = "siddham-jain/reflect";
+const REPO = "siddham-jain/knowthyself";
 const { version } = require("../package.json");
 const binDir = path.join(__dirname, "..", "bin");
 
@@ -20,13 +20,13 @@ const PLATFORMS = { darwin: "darwin", linux: "linux", win32: "windows" };
 const ARCHS = { x64: "amd64", arm64: "arm64" };
 
 function fail(msg) {
-  console.error(`\nreflect install failed: ${msg}\n`);
+  console.error(`\nknowthyself install failed: ${msg}\n`);
   process.exit(1);
 }
 
 async function main() {
   if (process.env.KNOWTHYSELF_SKIP_DOWNLOAD) {
-    console.log("reflect: KNOWTHYSELF_SKIP_DOWNLOAD set — skipping binary download.");
+    console.log("knowthyself: KNOWTHYSELF_SKIP_DOWNLOAD set — skipping binary download.");
     return;
   }
 
@@ -40,13 +40,13 @@ async function main() {
   }
 
   const ext = goos === "windows" ? "zip" : "tar.gz";
-  const archive = `reflect_${version}_${goos}_${goarch}.${ext}`;
+  const archive = `knowthyself_${version}_${goos}_${goarch}.${ext}`;
   const url = `https://github.com/${REPO}/releases/download/v${version}/${archive}`;
 
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "reflect-"));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "knowthyself-"));
   const archivePath = path.join(tmpDir, archive);
 
-  console.log(`reflect: downloading ${archive} …`);
+  console.log(`knowthyself: downloading ${archive} …`);
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok) {
     fail(
@@ -59,7 +59,7 @@ async function main() {
   // Extract the binary into bin/. `tar` handles .tar.gz everywhere and .zip on
   // Windows 10+ (bsdtar); fall back to PowerShell for older Windows.
   fs.mkdirSync(binDir, { recursive: true });
-  const binName = goos === "windows" ? "reflect.exe" : "reflect";
+  const binName = goos === "windows" ? "knowthyself.exe" : "knowthyself";
   try {
     if (ext === "tar.gz") {
       execFileSync("tar", ["-xzf", archivePath, "-C", tmpDir, binName], { stdio: "inherit" });
@@ -85,7 +85,7 @@ async function main() {
   if (goos !== "windows") fs.chmodSync(dest, 0o755);
 
   fs.rmSync(tmpDir, { recursive: true, force: true });
-  console.log(`reflect: installed ${binName} (v${version}). Run \`reflect\` to start.`);
+  console.log(`knowthyself: installed ${binName} (v${version}). Run \`knowthyself\` to start.`);
 }
 
 main().catch((err) => fail(err.message));

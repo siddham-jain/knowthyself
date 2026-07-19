@@ -1,4 +1,4 @@
-// Package design is the single source of truth for reflect's visual language: a
+// Package design is the single source of truth for knowthyself's visual language: a
 // restrained, industrial-instrument aesthetic (mission-control / financial-terminal),
 // monochrome with a single amber accent, structure carried by borders and rules
 // rather than color or effects. These tokens style the TUI today and are the same

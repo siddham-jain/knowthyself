@@ -1,4 +1,4 @@
-# reflect installer for Windows — https://github.com/siddham/reflect
+# knowthyself installer for Windows — https://github.com/siddham-jain/knowthyself
 #
 # Usage:  irm https://<domain>/install.ps1 | iex
 #
@@ -7,8 +7,8 @@
 # adds that dir to PATH, and offers to run it.
 
 $ErrorActionPreference = 'Stop'
-$Repo = 'siddham/reflect'
-$Bin  = 'reflect'
+$Repo = 'siddham-jain/knowthyself'
+$Bin  = 'knowthyself'
 
 function Write-Amber($t) { Write-Host $t -ForegroundColor Yellow }
 function Write-Dim($t)   { Write-Host $t -ForegroundColor DarkGray }
@@ -51,7 +51,7 @@ $asset = "${Bin}_${num}_windows_${arch}.zip"
 $base  = "https://github.com/$Repo/releases/download/$version"
 Write-Host "  downloading $asset ($version)"
 
-$tmp = Join-Path $env:TEMP ("reflect-" + [guid]::NewGuid())
+$tmp = Join-Path $env:TEMP ("knowthyself-" + [guid]::NewGuid())
 New-Item -ItemType Directory -Path $tmp | Out-Null
 try {
 	Invoke-WebRequest "$base/$asset" -OutFile "$tmp\$asset"
@@ -65,7 +65,7 @@ try {
 	Write-Amber "  checksum ok"
 
 	# --- install -----------------------------------------------------------------
-	$dest = Join-Path $env:LOCALAPPDATA "Programs\reflect"
+	$dest = Join-Path $env:LOCALAPPDATA "Programs\knowthyself"
 	New-Item -ItemType Directory -Force -Path $dest | Out-Null
 	Expand-Archive "$tmp\$asset" -DestinationPath $dest -Force
 	Write-Host "  installed to $dest\$Bin.exe"
@@ -85,7 +85,7 @@ finally {
 # --- offer to run it now ---------------------------------------------------------
 $ans = Read-Host "`n  Meet yourself now? [Y/n]"
 if ($ans -match '^(n|no)$') {
-	Write-Host "`n  whenever you are ready:  " -NoNewline; Write-Amber "reflect"
+	Write-Host "`n  whenever you are ready:  " -NoNewline; Write-Amber "knowthyself"
 }
 else {
 	Write-Host ""

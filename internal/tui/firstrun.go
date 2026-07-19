@@ -7,10 +7,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/design"
 )
 
-// This file is the first-run gate: the very first time reflect is run on a real
+// This file is the first-run gate: the very first time knowthyself is run on a real
 // terminal, it asks whether to profile now instead of dropping a newcomer straight
 // into their dashboard. Consent first, reveal second.
 
@@ -61,7 +61,7 @@ func (m firstRunModel) View() string {
 	blocks = append(blocks,
 		lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render("Meet how you work with AI?"),
 		design.Label.Render(wrap(
-			"reflect reads your Claude Code history and plots how you actually collaborate — your strengths, your habits, your shape. Want to see it now?",
+			"knowthyself reads your Claude Code history and plots how you actually collaborate — your strengths, your habits, your shape. Want to see it now?",
 			inner)),
 		"",
 	)
@@ -106,7 +106,7 @@ func RenderMaybeLater(w io.Writer, termW int) {
 		"",
 		design.Label.Render("No rush. Whenever you're curious how you work with AI, just run:"),
 		"",
-		accent.Render("  reflect"),
+		accent.Render("  knowthyself"),
 	)
 	fmt.Fprintln(w, "\n"+frame+"\n")
 }

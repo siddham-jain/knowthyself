@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/siddham/reflect/internal/provider"
+	"github.com/siddham-jain/knowthyself/internal/provider"
 )
 
 // ID is the source identifier for Claude Code.

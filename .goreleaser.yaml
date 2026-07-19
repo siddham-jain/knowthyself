@@ -1,4 +1,4 @@
-# GoReleaser config for reflect — https://goreleaser.com
+# GoReleaser config for knowthyself — https://goreleaser.com
 #
 # Local check:     goreleaser check
 # Local dry run:   goreleaser release --snapshot --clean   (builds everything, publishes nothing)
@@ -9,16 +9,16 @@
 # the CI secrets noted on each block — or comment a block out until you're ready for it.
 version: 2
 
-project_name: reflect
+project_name: knowthyself
 
 before:
   hooks:
     - go mod tidy
 
 builds:
-  - id: reflect
-    main: ./cmd/reflect
-    binary: reflect
+  - id: knowthyself
+    main: ./cmd/knowthyself
+    binary: knowthyself
     env:
       - CGO_ENABLED=0 # pure Go (modernc sqlite) — cross-compiles cleanly everywhere
     flags:
@@ -72,13 +72,13 @@ signs:
 #       owner: siddham-jain
 #       name: homebrew-tap
 #       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-#     homepage: "https://github.com/siddham-jain/reflect"
+#     homepage: "https://github.com/siddham-jain/knowthyself"
 #     description: "See how you actually collaborate with your AI coding assistant."
 #     license: "MIT"
 #     install: |
-#       bin.install "reflect"
+#       bin.install "knowthyself"
 #     test: |
-#       system "#{bin}/reflect", "--version"
+#       system "#{bin}/knowthyself", "--version"
 #
 # # --- Scoop (Windows) — needs repo `siddham-jain/scoop-bucket` + secret TAP_GITHUB_TOKEN
 # scoops:
@@ -86,23 +86,23 @@ signs:
 #       owner: siddham-jain
 #       name: scoop-bucket
 #       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
-#     homepage: "https://github.com/siddham-jain/reflect"
+#     homepage: "https://github.com/siddham-jain/knowthyself"
 #     description: "See how you actually collaborate with your AI coding assistant."
 #     license: "MIT"
 #
 # # --- winget (Windows) — commits to a fork `siddham-jain/winget-pkgs` and opens a PR upstream.
 # # Needs secret TAP_GITHUB_TOKEN.
 # winget:
-#   - name: reflect
+#   - name: knowthyself
 #     publisher: Siddham
 #     short_description: "See how you actually collaborate with your AI coding assistant."
 #     license: "MIT"
-#     homepage: "https://github.com/siddham-jain/reflect"
-#     package_identifier: Siddham.reflect
+#     homepage: "https://github.com/siddham-jain/knowthyself"
+#     package_identifier: Siddham.knowthyself
 #     repository:
 #       owner: siddham-jain
 #       name: winget-pkgs
-#       branch: "reflect-{{ .Version }}"
+#       branch: "knowthyself-{{ .Version }}"
 #       token: "{{ .Env.TAP_GITHUB_TOKEN }}"
 #       pull_request:
 #         enabled: true
@@ -115,19 +115,19 @@ signs:
 # # --- AUR (Arch) — publishes a binary PKGBUILD over SSH. Needs an AUR account and the
 # # private key in secret AUR_KEY.
 # aurs:
-#   - name: reflect-bin
-#     homepage: "https://github.com/siddham-jain/reflect"
+#   - name: knowthyself-bin
+#     homepage: "https://github.com/siddham-jain/knowthyself"
 #     description: "See how you actually collaborate with your AI coding assistant."
 #     maintainers:
 #       - "Siddham Jain <abhishek.shah5486@gmail.com>"
 #     license: "MIT"
 #     private_key: "{{ .Env.AUR_KEY }}"
-#     git_url: "ssh://aur@aur.archlinux.org/reflect-bin.git"
+#     git_url: "ssh://aur@aur.archlinux.org/knowthyself-bin.git"
 #     package: |-
-#       install -Dm755 "./reflect" "${pkgdir}/usr/bin/reflect"
-#       install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/reflect/LICENSE"
+#       install -Dm755 "./knowthyself" "${pkgdir}/usr/bin/knowthyself"
+#       install -Dm644 "./LICENSE" "${pkgdir}/usr/share/licenses/knowthyself/LICENSE"
 
 release:
   github:
     owner: siddham-jain
-    name: reflect
+    name: knowthyself

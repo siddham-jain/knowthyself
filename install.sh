@@ -1,5 +1,5 @@
 #!/bin/sh
-# reflect installer — https://github.com/siddham/reflect
+# knowthyself installer — https://github.com/siddham-jain/knowthyself
 #
 # Usage:   curl -fsSL https://<domain>/install.sh | sh
 # Inspect: curl -fsSL https://<domain>/install.sh          (no pipe — prints this script)
@@ -8,8 +8,8 @@
 # its SHA-256 against the signed checksums, installs it, and offers to run it.
 set -eu
 
-REPO="siddham/reflect"
-BIN="reflect"
+REPO="siddham-jain/knowthyself"
+BIN="knowthyself"
 
 # --- colors (amber wordmark; disabled when piped or NO_COLOR) --------------------
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
@@ -44,7 +44,7 @@ banner() {
 	printf '   %bknow how you build.%b\n\n' "$D" "$Z"
 }
 
-fail() { printf 'reflect: %s\n' "$1" >&2; exit 1; }
+fail() { printf 'knowthyself: %s\n' "$1" >&2; exit 1; }
 
 banner
 

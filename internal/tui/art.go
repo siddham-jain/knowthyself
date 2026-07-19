@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/design"
 )
 
 // This file holds reflect's ASCII identity. The signature mark is the wordmark with

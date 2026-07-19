@@ -1,13 +1,13 @@
 .PHONY: build test lint run clean tidy
 
 build:
-	go build -o reflect ./cmd/reflect
+	go build -o knowthyself ./cmd/knowthyself
 
 test:
 	go test ./...
 
 run: build
-	./reflect
+	./knowthyself
 
 tidy:
 	go mod tidy
@@ -16,5 +16,5 @@ lint:
 	go vet ./...
 
 clean:
-	rm -f reflect
+	rm -f knowthyself
 	rm -rf dist

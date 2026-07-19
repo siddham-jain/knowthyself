@@ -1,16 +1,16 @@
 # knowthyself
 
-See how you actually collaborate with your AI coding assistant — a terminal dashboard.
+See how you actually collaborate with your AI coding assistant. A terminal dashboard.
 
-This package installs the **`reflect`** command. On install it downloads the
+This package installs the **`knowthyself`** command. On install it downloads the
 prebuilt binary for your platform from the
-[GitHub Releases](https://github.com/siddham-jain/reflect/releases).
+[GitHub Releases](https://github.com/siddham-jain/knowthyself/releases).
 
 ## Install
 
 ```sh
 npm install -g knowthyself
-reflect
+knowthyself
 ```
 
 Or run it without installing:
@@ -28,7 +28,7 @@ from source).
 
 ## Links
 
-- Source & docs: https://github.com/siddham-jain/reflect
-- Issues: https://github.com/siddham-jain/reflect/issues
+- Source and docs: https://github.com/siddham-jain/knowthyself
+- Issues: https://github.com/siddham-jain/knowthyself/issues
 
 MIT © Siddham Jain

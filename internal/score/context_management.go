@@ -1,8 +1,8 @@
 package score
 
 import (
-	"github.com/siddham/reflect/internal/model"
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // contextManagement grades context hygiene: deliberate resets (/clear), planning

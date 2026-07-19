@@ -31,6 +31,13 @@ editor, or agent can pick up with full context.
 
 ## Work Log
 
+### 2026-07-19 — Name unified to knowthyself, README media
+- **What:** The command, Go module path (`github.com/siddham-jain/knowthyself`), binary, `cmd/` dir, cache path (`…/knowthyself/store.db`), GoReleaser project, install scripts, and npm package all use the name `knowthyself`. The npm `bin` now exposes only `knowthyself` and the package is bumped to 0.2.0. Root README now embeds the demo GIF and the Overview / Sessions / Trends screenshots from `assets/`; the demo GIF was compressed from 156 MB to about 15 MB with ffmpeg. The decorative ASCII wordmark (`internal/tui/art.go`) and the logo image intentionally still read "reflect".
+- **Why:** The bare npm name was taken, so the tool ships as `knowthyself`; the source now matches.
+- **State:** Builds, tests, and `goreleaser check` pass. A `v0.2.0` release is needed so the published npm 0.2.0 has matching `knowthyself_0.2.0_*` archives to download; then `npm publish` (needs an OTP).
+- **Notes:** Existing users' cache under the old path is not migrated; the tool simply re-syncs into the new path on first run.
+
+
 ### 2026-07-18 — npm distribution + release owner fix
 - **What:** Added an `npm/` wrapper package (`knowthyself`) that downloads the prebuilt `reflect` binary from GitHub Releases on postinstall. Fixed the `siddham` → `siddham-jain` owner mismatch in `.goreleaser.yaml` (`release.github.owner`) so releases and download URLs hit the real repo, and commented out the Homebrew/Scoop/winget/AUR publisher blocks (they need a `TAP_GITHUB_TOKEN`/`AUR_KEY` not yet configured) so the first binary-only release succeeds. Gitignored the `/reflect` build artifact.
 - **Why:** Enable `npm i -g knowthyself` / `npx knowthyself` without shipping a Go toolchain.

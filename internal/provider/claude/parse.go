@@ -9,9 +9,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/siddham/reflect/internal/model"
-	"github.com/siddham/reflect/internal/provider"
-	"github.com/siddham/reflect/internal/text"
+	"github.com/siddham-jain/knowthyself/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/provider"
+	"github.com/siddham-jain/knowthyself/internal/text"
 )
 
 // Parse opens the session file and parses it defensively. A malformed file yields

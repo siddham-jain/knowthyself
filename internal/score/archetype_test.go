@@ -3,7 +3,7 @@ package score
 import (
 	"testing"
 
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // allSufficient marks every dimension as gradable.

@@ -1,5 +1,5 @@
 # Binaries
-/reflect
+/knowthyself
 /synch
 /dist/
 *.exe
@@ -8,8 +8,8 @@
 
 # npm wrapper
 /npm/node_modules/
-/npm/bin/reflect
-/npm/bin/reflect.exe
+/npm/bin/knowthyself
+/npm/bin/knowthyself.exe
 
 # Go
 /vendor/

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/reflect/internal/design"
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // tokensPerNovel is a deliberately round, clearly-approximate yardstick for turning

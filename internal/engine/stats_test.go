@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/model"
 )
 
 func TestComputeStatsAndTraits(t *testing.T) {

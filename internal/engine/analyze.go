@@ -6,11 +6,11 @@ import (
 	"sort"
 	"time"
 
-	"github.com/siddham/reflect/internal/insight"
-	"github.com/siddham/reflect/internal/model"
-	"github.com/siddham/reflect/internal/profile"
-	"github.com/siddham/reflect/internal/score"
-	"github.com/siddham/reflect/internal/text"
+	"github.com/siddham-jain/knowthyself/internal/insight"
+	"github.com/siddham-jain/knowthyself/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/score"
+	"github.com/siddham-jain/knowthyself/internal/text"
 )
 
 // Analyze runs the scoring engine over the sessions, computes headline stats, and

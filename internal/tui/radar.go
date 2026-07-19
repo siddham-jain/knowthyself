@@ -4,8 +4,8 @@ import (
 	"math"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/reflect/internal/design"
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // radarOpts controls interactive/animated rendering of the radar.

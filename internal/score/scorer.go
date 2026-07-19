@@ -7,8 +7,8 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/siddham/reflect/internal/model"
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // Scorer grades one dimension for a single session. It returns a Signal carrying

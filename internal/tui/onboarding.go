@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/siddham/reflect/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/design"
 )
 
-// This file renders reflect's "cold start" moments — the states before there's a
+// This file renders knowthyself's "cold start" moments — the states before there's a
 // profile to show. They are deliberately warm and a little funny: a first-time user
 // who hits one of these should feel greeted, not error-messaged.
 
@@ -41,7 +41,7 @@ func moment(w io.Writer, termW int, art string, artStyle lipgloss.Style, headlin
 		"",
 		lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("╌", inner)),
 		design.Label.Render("run anytime  ")+
-			lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render("reflect"),
+			lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render("knowthyself"),
 	)
 
 	frame := lipgloss.JoinVertical(lipgloss.Center, blocks...)
@@ -59,7 +59,7 @@ func RenderNoClaudeScreen(w io.Writer, termW int, base string) {
 	amber := lipgloss.NewStyle().Foreground(design.Accent).Bold(true)
 	moment(w, termW, reactionFace, amber,
 		"Wait — no Claude on this machine?!",
-		"reflect reads your Claude Code history at "+base+" to show you how you actually collaborate. There's nothing there yet — so Claude Code isn't installed, or its history lives somewhere custom.",
+		"knowthyself reads your Claude Code history at "+base+" to show you how you actually collaborate. There's nothing there yet — so Claude Code isn't installed, or its history lives somewhere custom.",
 		[]string{
 			design.Dim.Render("Shipping code with no AI pair in this economy? Bold. Let's fix that."),
 			"",

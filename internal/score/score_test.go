@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/siddham/reflect/internal/model"
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // userTurn builds a scorable user turn.

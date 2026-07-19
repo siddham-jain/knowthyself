@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/model"
 )
 
 // parse is a test helper that runs the core parser over a JSONL string.

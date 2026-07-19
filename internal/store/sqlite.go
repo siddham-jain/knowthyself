@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/siddham/reflect/internal/model"
+	"github.com/siddham-jain/knowthyself/internal/model"
 	_ "modernc.org/sqlite" // pure-Go driver, no cgo
 )
 
@@ -20,8 +20,8 @@ type SQLite struct {
 	db *sql.DB
 }
 
-// DefaultPath returns the cache DB path: $XDG_CONFIG_HOME/reflect/store.db, falling
-// back to ~/.config/reflect/store.db.
+// DefaultPath returns the cache DB path: $XDG_CONFIG_HOME/knowthyself/store.db, falling
+// back to ~/.config/knowthyself/store.db.
 func DefaultPath() string {
 	base := os.Getenv("XDG_CONFIG_HOME")
 	if base == "" {
@@ -31,7 +31,7 @@ func DefaultPath() string {
 			base = ".config"
 		}
 	}
-	return filepath.Join(base, "reflect", "store.db")
+	return filepath.Join(base, "knowthyself", "store.db")
 }
 
 // Open opens (creating if needed) the SQLite cache at path. Pass ":memory:" for a

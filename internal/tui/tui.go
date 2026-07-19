@@ -15,8 +15,8 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"golang.org/x/term"
 
-	"github.com/siddham/reflect/internal/design"
-	"github.com/siddham/reflect/internal/profile"
+	"github.com/siddham-jain/knowthyself/internal/design"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 // Reporter renders the dashboard to a writer (stdout by default; injectable for

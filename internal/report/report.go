@@ -4,7 +4,7 @@
 // the same profile.Profile.
 package report
 
-import "github.com/siddham/reflect/internal/profile"
+import "github.com/siddham-jain/knowthyself/internal/profile"
 
 // Reporter renders a Profile to some surface (terminal, stdout JSON, ...).
 type Reporter interface {

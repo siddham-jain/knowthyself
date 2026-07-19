@@ -1,15 +1,14 @@
 # Assets
 
-Media referenced by the root `README.md`. Drop the files here with these exact names, then uncomment the matching tags in the README.
+Media referenced by the root `README.md`.
 
-| File | Purpose | Suggested size |
-|:-----|:--------|:---------------|
-| `logo.png` | The reflect wordmark and portrait logo, shown at the top of the README. | 340px wide or larger, transparent or dark background |
-| `demo.gif` | Optional looping demo. Alternatively upload an `.mp4` to a GitHub issue or PR and paste the attachment link into the README. | 820px wide |
-| `reveal.png` | The Reveal screen (persona portrait after the boot animation). | 820px wide |
-| `overview.png` | The Overview screen (radar plus evidence inspector). | 820px wide |
-| `sessions.png` | The Sessions screen (per session mini radar and bars). | 820px wide |
-| `trends.png` | The Trends screen (sparklines per dimension). | 820px wide |
+| File | Purpose |
+|:-----|:--------|
+| `logo.png` | The logo shown at the top of the README. |
+| `demo.gif` | The demo shown under "Demo". Keep it small (a few MB) so the README stays fast; compress with ffmpeg or gifsicle before committing. |
+| `overview.png` | The Overview screen (radar plus evidence inspector). |
+| `sessions.png` | The Sessions screen (per session mini radar and bars). |
+| `trends.png` | The Trends screen (sparklines per dimension). |
 
 ## Capturing clean terminal screenshots
 
