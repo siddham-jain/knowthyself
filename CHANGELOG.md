@@ -21,6 +21,9 @@ editor, or agent can pick up with full context.
 - New "by the numbers" stats: total collaboration time, first-session date (tenure), peak collaboration hour, language mix (English/Hindi/Other via `text.DominantScript`), distinct project count. `internal/profile/profile.go` (`Stats`) + `internal/engine/analyze.go` (`computeStats`).
 - Tests: archetype shape-matching + trait/stat computation + reveal render/reflow across a width sweep.
 
+### Fixed
+- **Sessions view opens on your newest session** — the per-session list is ordered oldest-first (chronological, so the Trends view reads left-to-right), which meant it opened focused on a months-old entry with your latest work buried at the bottom of the scroll. It looked like a sync failure ("my recent sessions aren't here") when the cache was actually fully up to date. The list now initializes its cursor to the newest session. `internal/tui/model.go` (`newModel`), test updated in `internal/tui/model_test.go` (`TestSessionsDrillDown`).
+
 ### Changed
 - **Professional README rewrite** — logo-led header with badges, a clear "what it does" section, npm-first install, placeholder slots for a demo video and per-screen TUI screenshots, and a dedicated "Collaboration archetypes" section (all eight personas) placed after the core docs. Dash-free prose. Fixed the owner references to `siddham-jain`. New `assets/` folder with a guide for the media files to drop in. `README.md`, `assets/README.md`.
 - **Responsive TUI** — the dashboard now budgets vertical space: the radar shrinks to a height cap, the session list and overview detail row fit to the terminal height, a "terminal too short" notice mirrors the too-narrow one, and every frame is hard-clipped to the viewport. This fixes the bug where a small terminal rendered a partial frame and corrupted the scrollback until a manual resize. `internal/tui/view.go`, `radar.go`, `tui.go`.
@@ -30,6 +33,13 @@ editor, or agent can pick up with full context.
 ---
 
 ## Work Log
+
+### 2026-07-19 — Sessions view opens on newest ("not syncing" was a display bug)
+- **What:** Investigated a report that `knowthyself` / sync "wasn't picking up sessions I just did." Verified end-to-end it was: `--sync` discovers all 27 top-level sessions, the cache (`~/.config/knowthyself/store.db`) matches disk on mtime+size, and `--json` includes today's sessions. The real symptom ("runs but data looks stale") traced to the Sessions view: it's ordered oldest-first and opened with the cursor at index 0, so recent work sat off-screen at the bottom of a 27-row list. Fixed by initializing `sessCursor` to the newest session in `newModel`.
+- **Why:** The chronological order is needed by the Trends view, so reversing the slice was wrong; moving the initial cursor keeps trends intact while showing the user their latest session first.
+- **State:** `go build`, `go vet`, and all tests pass (`TestSessionsDrillDown` updated to assert newest-first + navigation). The installed npm binary (v0.2.0) predates this fix — a rebuild/release is needed to ship it.
+- **Notes:** Two things surfaced but were NOT changed here: (1) the aggregate reveal barely moves when one short session is added, which also reads as "nothing synced"; (2) 28 `subagents/agent-*.jsonl` transcripts are deliberately not discovered, so subagent/workflow-heavy work isn't counted — a candidate follow-up if that history should be included.
+
 
 ### 2026-07-19 — Name unified to knowthyself, README media
 - **What:** The command, Go module path (`github.com/siddham-jain/knowthyself`), binary, `cmd/` dir, cache path (`…/knowthyself/store.db`), GoReleaser project, install scripts, and npm package all use the name `knowthyself`. The npm `bin` now exposes only `knowthyself` and the package is bumped to 0.2.0. Root README now embeds the demo GIF and the Overview / Sessions / Trends screenshots from `assets/`; the demo GIF was compressed from 156 MB to about 15 MB with ffmpeg. The decorative ASCII wordmark (`internal/tui/art.go`) and the logo image intentionally still read "reflect".

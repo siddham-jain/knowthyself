@@ -47,7 +47,11 @@ const (
 )
 
 func newModel(p profile.Profile) model {
-	return model{p: p, mode: viewOverview, booting: true, atReveal: true}
+	// Sessions are ordered oldest-first (chronological, for the trends view), so open
+	// the Sessions list focused on the newest session — that's the work you just did
+	// and expect to see, not a months-old entry buried at the bottom.
+	sessCursor := maxInt(0, len(p.Sessions)-1)
+	return model{p: p, mode: viewOverview, sessCursor: sessCursor, booting: true, atReveal: true}
 }
 
 func (m model) Init() tea.Cmd { return tickCmd() }

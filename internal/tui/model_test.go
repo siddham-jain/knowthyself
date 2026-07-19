@@ -131,12 +131,18 @@ func TestTabCyclesViews(t *testing.T) {
 
 func TestSessionsDrillDown(t *testing.T) {
 	lipgloss.SetColorProfile(0)
-	m := settled(profileWithSessions())
+	p := profileWithSessions()
+	m := settled(p)
 	m.mode = viewSessions
-	m = advance(m, tea.KeyMsg{Type: tea.KeyDown})
-	m = advance(m, tea.KeyMsg{Type: tea.KeyDown})
-	if m.sessCursor != 2 {
-		t.Fatalf("session cursor = %d", m.sessCursor)
+	// The list opens focused on the newest session (last, since it's chronological),
+	// so the work you just did is what you see first.
+	if m.sessCursor != len(p.Sessions)-1 {
+		t.Fatalf("session cursor = %d, want newest (%d)", m.sessCursor, len(p.Sessions)-1)
+	}
+	m = advance(m, tea.KeyMsg{Type: tea.KeyUp})
+	m = advance(m, tea.KeyMsg{Type: tea.KeyUp})
+	if m.sessCursor != len(p.Sessions)-3 {
+		t.Fatalf("session cursor = %d after two ups", m.sessCursor)
 	}
 	if !strings.Contains(m.View(), "SESSION ·") {
 		t.Fatalf("session detail not shown")
