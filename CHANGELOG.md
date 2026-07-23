@@ -5,10 +5,19 @@ editor, or agent can pick up with full context.
 
 ## [Unreleased]
 
+---
+
+## [0.3.1] - 2026-07-24
+
 ### Added
 - **Guided setup when `--deep-eval` has nothing configured** — instead of silently falling back to the built-in tips, a real terminal now offers to set a provider up on the spot, runs the provider wizard, saves it, and continues the deep read in the same run. Piped/non-interactive runs keep the plain error, which now points at `knowthyself provider add`. `internal/tui/confirm.go`, `cmd/knowthyself/deepeval.go` (`setUpProvider`).
 - **`-v` as a shorthand for `--version`.**
 
+---
+
+## [0.3.0] - 2026-07-24
+
+### Added
 - **`knowthyself update`** — checks GitHub Releases and upgrades in place. Detects how the running binary was installed (npm / Homebrew / `go install` / plain download) and only self-replaces a plain download; a package-managed binary is never touched, the manager's own command is printed instead, so the two can't fight over the same file. The self-replace verifies the archive SHA-256 against the release `checksums.txt` before installing, stages into the destination directory so the swap is an atomic same-filesystem rename, checks write permission before downloading, and rolls back on Windows where a running image can't be overwritten. `--check` reports without installing. `internal/update`, `cmd/knowthyself/update.go`.
 - **Update nudge in the dashboard footer** — `▲ <version>` when a newer release exists. Reads a cache written by a previous run and refreshes it in the background, so it never adds startup latency and never fails visibly. Suppressed on dev builds and by `KNOWTHYSELF_NO_UPDATE_CHECK`. `internal/update/notify.go`.
 - **`--deep-eval`, implemented** — was a stub that always returned nil. Now a full model-judged read of the actual prompt text on five anchored 0–4 criteria the deterministic scorers are blind to (goal clarity, context sufficiency, constraints & acceptance, scope discipline, correction quality). Anchored ordinal levels rather than an unanchored 0–10, which agrees poorly between models and between runs. Architecture in `docs/DEEP_EVAL.md`; code in `internal/insight/deepeval`.
@@ -48,6 +57,12 @@ editor, or agent can pick up with full context.
 ---
 
 ## Work Log
+
+### 2026-07-24 — 0.3.1: guided provider setup, `-v`
+- **What:** `--deep-eval` with nothing configured now offers to set a provider up (confirm screen → preset picker → editable form), saves it, and continues the read in the same run, instead of silently falling back to heuristic tips. Added `-v` alongside `--version`. `ErrNoKey`'s remedy now points at `knowthyself provider add`.
+- **Why:** A flag the user explicitly passed was doing nothing visible — the fallback notice only appeared on stderr after the dashboard was quit, so it read as "it asked for an Anthropic key and then ignored me".
+- **State:** `go build`, `go vet`, `go test ./...` green. Released as v0.3.1.
+- **Notes:** The symptoms reported against 0.3.0 (`update` opening the dashboard, the old `ANTHROPIC_API_KEY` message, a `REFLECT` header) were all a stale v0.2.1 binary on PATH, not defects — v0.3.0 already behaved correctly. `npm install -g knowthyself@latest` was the fix.
 
 ### 2026-07-24 — Debrand, Delphic identity mark, update command, deep-eval design
 - **What:** Removed the last of the interim `reflect` branding: the block wordmark is gone, replaced by the **Delphic inscription** identity mark (`ΓΝΩΘΙ ΣΕΑΥΤΟΝ` under the letterspaced name, framed like a chiselled lintel) in `internal/tui/art.go`, now used by the boot screen, first-run gate, both cold-start screens, and both installer banners. The TUI header reads `KNOWTHYSELF`; the boot animation's OVERALL gauge became the identity plate. The cartoon `reactionFace` was dropped for an uninscribed slab, matching the instrument aesthetic. `REFLECT_VERSION` → `KNOWTHYSELF_VERSION` in both installers. Deleted the committed 11 MB `reflect` binary and the stale `synch` build. Added `knowthyself update` with install-method detection and checksum-verified atomic self-replace, plus a zero-latency footer nudge. Designed and then implemented `--deep-eval` end to end (see `docs/DEEP_EVAL.md`), and wrote `CLAUDE.md`.
