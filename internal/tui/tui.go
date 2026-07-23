@@ -21,10 +21,14 @@ import (
 
 // Reporter renders the dashboard to a writer (stdout by default; injectable for
 // tests, which always take the static path).
-type Reporter struct{ W io.Writer }
+type Reporter struct {
+	W io.Writer
+	// Notice is a newer available version, shown in the footer. Empty for none.
+	Notice string
+}
 
 // New returns a TUI reporter writing to stdout.
-func New() Reporter { return Reporter{W: os.Stdout} }
+func New(notice string) Reporter { return Reporter{W: os.Stdout, Notice: notice} }
 
 // Layout constants. Widths below are *rendered* totals; a panel rendered at total T
 // sets a Lip Gloss content width of T-2 (border) and wraps text to T-4 (border +
@@ -46,13 +50,13 @@ func (r Reporter) Render(p profile.Profile) error {
 		w = os.Stdout
 	}
 	if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
-		return runInteractive(p)
+		return runInteractive(p, r.Notice)
 	}
 	return renderStatic(w, p)
 }
 
-func runInteractive(p profile.Profile) error {
-	_, err := tea.NewProgram(newModel(p), tea.WithAltScreen()).Run()
+func runInteractive(p profile.Profile, notice string) error {
+	_, err := tea.NewProgram(newModel(p, notice), tea.WithAltScreen()).Run()
 	return err
 }
 
@@ -85,19 +89,18 @@ func textArea(total int) int { return total - 4 }
 // --- shared styled components (width-driven; used by static + interactive views) ---
 
 func header(p profile.Profile, w int) string {
-	title := design.Header.Render("REFLECT")
+	title := design.Header.Render("KNOWTHYSELF")
 	sub := design.Dim.Render(" // AI COLLABORATION PROFILE")
 	meta := design.Label.Render(fmt.Sprintf("SRC %s   GEN %s",
 		strings.ToUpper(p.Source), p.GeneratedAt.Format("2006-01-02 15:04")))
 	top := lipgloss.JoinHorizontal(lipgloss.Bottom, title, sub)
 	// Drop the tagline, then the meta, as width shrinks.
 	if w < lipgloss.Width(top)+lipgloss.Width(meta)+2 {
-		top = design.Header.Render("REFLECT")
+		top = title
 	}
 	line := lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("━", w))
 	gap := w - lipgloss.Width(top) - lipgloss.Width(meta)
 	if gap < 1 {
-		// Too tight even for REFLECT + meta: keep just the wordmark.
 		return top + "\n" + line
 	}
 	return top + strings.Repeat(" ", gap) + meta + "\n" + line

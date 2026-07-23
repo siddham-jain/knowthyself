@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/siddham-jain/knowthyself/internal/profile"
 )
 
 var ansiRe = regexp.MustCompile("\x1b\\[[0-9;]*m")
@@ -45,15 +46,67 @@ func TestEaseOutCubic(t *testing.T) {
 func TestResponsiveReflow(t *testing.T) {
 	lipgloss.SetColorProfile(0)
 	p := profileWithSessions()
+	withRead := profileWithSessions()
+	withRead.DeepRead = sampleDeepRead()
 	for _, w := range []int{40, 46, 47, 60, 73, 74, 100, 220} {
-		m := settled(p)
-		m.w, m.h = w, 44
-		for _, mode := range []viewMode{viewOverview, viewSessions, viewTrends} {
-			m.mode = mode
-			out := m.View()
-			if got := maxLineWidth(out); got > w {
-				t.Errorf("w=%d mode=%d overflow: max line %d > %d", w, mode, got, w)
+		for _, prof := range []profile.Profile{p, withRead} {
+			m := settled(prof)
+			m.updateNotice = "9.9.9" // the footer nudge must not push a line over either
+			m.w, m.h = w, 44
+			for mode := viewOverview; mode < viewCount; mode++ {
+				m.mode = mode
+				out := m.View()
+				if got := maxLineWidth(out); got > w {
+					t.Errorf("w=%d mode=%d overflow: max line %d > %d", w, mode, got, w)
+				}
 			}
+		}
+	}
+}
+
+func sampleDeepRead() *profile.DeepRead {
+	return &profile.DeepRead{
+		Model:     "claude-sonnet-5",
+		Endpoint:  "api.anthropic.com",
+		RubricVer: 1,
+		Sample:    profile.SampleInfo{Prompts: 60, Sessions: 12, Available: 840},
+		Criteria: []profile.CriterionResult{
+			{Key: "goal_clarity", Title: "Goal clarity", Mean: 2.4, Max: 4, Judged: 58},
+			{Key: "context_sufficiency", Title: "Context sufficiency", Mean: 3.1, Max: 4, Judged: 60},
+			{Key: "constraints", Title: "Constraints & acceptance", Mean: 1.2, Max: 4, Judged: 57},
+			{Key: "scope_discipline", Title: "Scope discipline", Mean: 3.6, Max: 4, Judged: 60},
+			{Key: "correction_quality", Title: "Correction quality", Mean: 0, Max: 4, Judged: 0},
+		},
+		Findings: []profile.Insight{
+			{Title: "State the done-condition", Body: "You rarely say what finished looks like, so the model guesses at scope.", Source: "deep-eval"},
+		},
+		Confidence: profile.ConfidenceHigh,
+	}
+}
+
+// A profile with no deep read must render the tab as an invitation, never a crash or
+// a blank panel.
+func TestDeepReadEmptyState(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	m := settled(profileWithSessions())
+	m.mode = viewDeepRead
+	if out := m.View(); !strings.Contains(out, "--deep-eval") {
+		t.Error("empty deep read view should point at the flag that fills it")
+	}
+}
+
+// The deep read is model-judged on a different scale; the panel must say so, or it
+// reads as another deterministic score.
+func TestDeepReadLabelsItsProvenance(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	p := profileWithSessions()
+	p.DeepRead = sampleDeepRead()
+	m := settled(p)
+	m.mode = viewDeepRead
+	out := m.View()
+	for _, want := range []string{"claude-sonnet-5", "60 prompts", "high", "/4"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("deep read view missing %q", want)
 		}
 	}
 }
@@ -109,12 +162,13 @@ func TestNarrowStacks(t *testing.T) {
 func TestNeverOverflowsHeight(t *testing.T) {
 	lipgloss.SetColorProfile(0)
 	p := profileWithSessions()
+	p.DeepRead = sampleDeepRead()
 	for _, sz := range []struct{ w, h int }{
 		{60, 20}, {80, 24}, {100, 30}, {74, 16}, {120, 40}, {46, 14},
 	} {
 		m := settled(p)
 		m.w, m.h = sz.w, sz.h
-		for _, mode := range []viewMode{viewOverview, viewSessions, viewTrends} {
+		for mode := viewOverview; mode < viewCount; mode++ {
 			m.mode = mode
 			if got := strings.Count(m.View(), "\n") + 1; got > sz.h {
 				t.Errorf("w=%d h=%d mode=%d overflow: %d lines > %d", sz.w, sz.h, mode, got, sz.h)

@@ -7,80 +7,43 @@ import (
 	"github.com/siddham-jain/knowthyself/internal/design"
 )
 
-// This file holds reflect's ASCII identity. The signature mark is the wordmark with
-// a mirrored, fading reflection beneath a waterline — the name made literal. The
-// edge-case art (a wide-eyed reaction, an empty-radar seedling) gives the onboarding
-// moments a face so they read as alive rather than as an error string.
+const (
+	markName  = "K N O W  T H Y S E L F"
+	markMaxim = "ΓΝΩΘΙ  ΣΕΑΥΤΟΝ"
+	markPad   = 5
+)
 
-// glyphs is a 5×5 block font for exactly the letters in "REFLECT". Each row is a
-// fixed 5 columns so the wordmark composes column-aligned regardless of letter.
-var glyphs = map[rune][5]string{
-	'R': {"████ ", "█   █", "████ ", "█  █ ", "█   █"},
-	'E': {"█████", "█    ", "███  ", "█    ", "█████"},
-	'F': {"█████", "█    ", "███  ", "█    ", "█    "},
-	'L': {"█    ", "█    ", "█    ", "█    ", "█████"},
-	'C': {"█████", "█    ", "█    ", "█    ", "█████"},
-	'T': {"█████", "  █  ", "  █  ", "  █  ", "  █  "},
+// markWidth is the rendered width of the framed mark, border included.
+var markWidth = lipgloss.Width(markName) + 2*markPad + 2
+
+// inscriptionArt is the identity mark: the letterspaced name over the Delphic maxim
+// it is named for, framed like a chiselled lintel. Under markWidth columns the frame
+// is dropped rather than broken.
+func inscriptionArt(width int) string {
+	name := lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render(markName)
+	if width > 0 && width < markWidth {
+		return name
+	}
+	maxim := lipgloss.NewStyle().Foreground(design.Faint).Render(markMaxim)
+	return lipgloss.NewStyle().
+		Border(design.Border).
+		BorderForeground(design.Accent).
+		Padding(0, markPad).
+		Render(lipgloss.JoinVertical(lipgloss.Center, "", name, "", maxim, ""))
 }
 
-// wordmarkRows renders WORD as five rows of block letters (single-column gutter).
-// Unknown runes render as blank cells, so the layout never breaks.
-func wordmarkRows(word string) [5]string {
-	var rows [5]string
-	blank := [5]string{"     ", "     ", "     ", "     ", "     "}
-	letters := make([][5]string, 0, len(word))
-	for _, r := range strings.ToUpper(word) {
-		if g, ok := glyphs[r]; ok {
-			letters = append(letters, g)
-		} else {
-			letters = append(letters, blank)
-		}
-	}
-	for r := 0; r < 5; r++ {
-		parts := make([]string, len(letters))
-		for i, g := range letters {
-			parts[i] = g[r]
-		}
-		rows[r] = strings.Join(parts, " ")
-	}
-	return rows
+// emptySlab is the same frame with nothing inscribed in it — the mark for "there is
+// no record to read yet".
+func emptySlab() string {
+	blank := strings.Repeat(" ", markWidth-2)
+	return lipgloss.NewStyle().
+		Border(design.Border).
+		BorderForeground(design.Faint).
+		Render(strings.Join([]string{blank, blank, blank}, "\n"))
 }
 
-// wordmarkArt returns the "reflect" wordmark in amber with a dimmed, vertically
-// mirrored reflection below a faint waterline — the brand's signature graphic.
-func wordmarkArt() string {
-	rows := wordmarkRows("REFLECT")
-	amber := lipgloss.NewStyle().Foreground(design.Accent).Bold(true)
-	faint := lipgloss.NewStyle().Foreground(design.Faint)
-	width := lipgloss.Width(rows[0])
-
-	var b strings.Builder
-	for _, r := range rows {
-		b.WriteString(amber.Render(r) + "\n")
-	}
-	b.WriteString(faint.Render(strings.Repeat("╌", width)) + "\n")
-	// The reflection: rows reversed, blocks softened to a watery shade.
-	for i := len(rows) - 1; i >= 0; i-- {
-		soft := strings.ReplaceAll(rows[i], "█", "▒")
-		b.WriteString(faint.Render(soft) + "\n")
-	}
-	return strings.TrimRight(b.String(), "\n")
-}
-
-// reactionFace is a wide-eyed, open-mouthed reaction — the beat for "wait, no Claude
-// on this machine?!" It carries the tone so the message underneath can stay short.
-const reactionFace = `      .-""""""-.
-    .'          '.
-   /   O      O   \
-  :                :
-  |     .----.     |
-  :     |    |     :
-   \    '----'    /
-    '.          .'
-      '-......-'`
-
-// emptyRadar is an unplotted radar with a single center point: "there's not enough
-// here to draw your shape yet." On-brand for the not-enough-data moment.
+// emptyRadar is an unplotted radar with a single centre point: not enough history to
+// draw a shape yet.
 const emptyRadar = `      ·   ·   ·
    ·               ·
   ·                 ·
@@ -91,14 +54,12 @@ const emptyRadar = `      ·   ·   ·
    ·               ·
       ·   ·   ·`
 
-// centeredArt renders a multi-line art block, styled and horizontally centered to w.
-func centeredArt(art string, w int, style lipgloss.Style) string {
-	var b strings.Builder
-	for i, line := range strings.Split(art, "\n") {
-		if i > 0 {
-			b.WriteByte('\n')
-		}
-		b.WriteString(style.Render(line))
+// styleLines applies a style to each line of a block, so a multi-line piece of art
+// keeps its shape instead of being styled as one wrapped string.
+func styleLines(art string, style lipgloss.Style) string {
+	lines := strings.Split(art, "\n")
+	for i, line := range lines {
+		lines[i] = style.Render(line)
 	}
-	return lipgloss.PlaceHorizontal(w, lipgloss.Center, b.String())
+	return strings.Join(lines, "\n")
 }

@@ -61,6 +61,8 @@ func (m model) View() string {
 		body = m.sessionsView(lay)
 	case m.mode == viewTrends:
 		body = m.trendsView(lay)
+	case m.mode == viewDeepRead:
+		body = m.deepReadView(lay)
 	default:
 		body = m.overviewView(lay)
 	}
@@ -103,19 +105,33 @@ func (m model) bootView(lay layout) string {
 	radar := func(total int) string {
 		return radarPanelWith(m.p, radarOpts{fraction: e, selected: -1, maxRows: rows}, total)
 	}
-	gauge := func(total int) string {
-		barW := clampInt(textArea(total)-8, 8, 30)
-		fill := int(e * float64(barW))
-		bar := lipgloss.NewStyle().Foreground(design.Accent).Render(strings.Repeat("▓", fill)) +
-			design.Dim.Render(strings.Repeat("░", barW-fill))
-		overall := lipgloss.NewStyle().Foreground(design.ScoreColor(m.p.Overall)).Bold(true).
-			Render(fmt.Sprintf("%.1f", m.p.Overall*e))
-		body := design.Label.Render("OVERALL") + "\n" + overall + design.Dim.Render(" / 10") + "\n\n" +
-			design.Dim.Render("[ INITIALIZING SESSION LEDGER ]") + "\n" +
-			bar + " " + design.Value.Render(fmt.Sprintf("%d%%", int(e*100)))
-		return panelBox(total).Render(body)
+	plate := func(total int) string { return bootPlate(e, total) }
+	return lay.stack(radar, plate, 48)
+}
+
+// bootPlate is the identity mark rendered as the boot panel: the panel's own border
+// serves as the inscription frame, so the mark is not framed twice.
+func bootPlate(e float64, total int) string {
+	area := textArea(total)
+	name := markName
+	if area < lipgloss.Width(name) {
+		name = "KNOWTHYSELF"
 	}
-	return lay.stack(radar, gauge, 48)
+	barW := clampInt(area-6, 6, 30)
+	fill := clampInt(int(e*float64(barW)), 0, barW)
+	bar := lipgloss.NewStyle().Foreground(design.Accent).Render(strings.Repeat("▓", fill)) +
+		design.Dim.Render(strings.Repeat("░", barW-fill))
+
+	body := strings.Join([]string{
+		"",
+		lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render(name),
+		"",
+		design.Dim.Render(markMaxim),
+		"",
+		bar + " " + design.Value.Render(fmt.Sprintf("%d%%", int(e*100))),
+	}, "\n")
+	return panelBox(total).Render(
+		lipgloss.NewStyle().Width(area).Align(lipgloss.Center).Render(body))
 }
 
 // --- overview ---
@@ -402,19 +418,40 @@ func fitTimeline(ss []profile.SessionSummary, n int) []float64 {
 
 // --- footer ---
 
-func (m model) footer(w int) string {
-	tabs := []string{"1 OVERVIEW", "2 SESSIONS", "3 TRENDS"}
-	var rendered []string
-	for i, t := range tabs {
+// tabLabels are the full names and the abbreviations used when the footer would
+// otherwise overflow a narrow terminal.
+var (
+	tabLabels      = []string{"1 OVERVIEW", "2 SESSIONS", "3 TRENDS", "4 DEEP READ"}
+	tabLabelsShort = []string{"1 OVR", "2 SES", "3 TRD", "4 DEEP"}
+)
+
+func (m model) tabBar(labels []string) string {
+	rendered := make([]string, len(labels))
+	for i, t := range labels {
 		if viewMode(i) == m.mode {
-			rendered = append(rendered, lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render("["+t+"]"))
+			rendered[i] = lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render("[" + t + "]")
 		} else {
-			rendered = append(rendered, design.Dim.Render(" "+t+" "))
+			rendered[i] = design.Dim.Render(" " + t + " ")
 		}
 	}
-	left := strings.Join(rendered, " ")
+	return strings.Join(rendered, " ")
+}
+
+func (m model) footer(w int) string {
+	left := m.tabBar(tabLabels)
+	if lipgloss.Width(left) > w {
+		left = m.tabBar(tabLabelsShort)
+	}
 	keys := design.Dim.Render("↑↓ select · ←→/tab view · r replay · q quit")
 	line := lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("─", w))
+
+	// The update nudge is the first thing dropped when the footer runs out of room.
+	if m.updateNotice != "" {
+		withNotice := left + "  " + lipgloss.NewStyle().Foreground(design.Accent).Render("▲ "+m.updateNotice)
+		if w-lipgloss.Width(withNotice)-lipgloss.Width(keys) >= 1 {
+			left = withNotice
+		}
+	}
 
 	gap := w - lipgloss.Width(left) - lipgloss.Width(keys)
 	if gap < 1 {

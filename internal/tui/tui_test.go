@@ -41,7 +41,7 @@ func TestRenderContainsKeyElements(t *testing.T) {
 	}
 	out := buf.String()
 	for _, want := range []string{
-		"REFLECT", "COLLABORATION RADAR", "OVERALL", "CONVERSATIONALIST",
+		"KNOWTHYSELF", "COLLABORATION RADAR", "OVERALL", "CONVERSATIONALIST",
 		"Prompt Quality", "Token Economy", "TELEMETRY", "SIGNALS & TIPS",
 		"Name files up front", "Bash", "7.0", // overall 6.97 rounds to 7.0
 	} {

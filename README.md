@@ -56,11 +56,16 @@ More package managers (Homebrew, Scoop, winget, AUR) are planned.
 ## Usage
 
 ```sh
-knowthyself            # sync, then open the interactive dashboard
-knowthyself --json     # print the raw profile as JSON (piped output stays scriptable)
-knowthyself --sync     # refresh the local cache, print a summary, then exit
-knowthyself --version  # print the version
+knowthyself                # sync, then open the interactive dashboard
+knowthyself --json         # print the raw profile as JSON (piped output stays scriptable)
+knowthyself --sync         # refresh the local cache, print a summary, then exit
+knowthyself --version      # print the version
+knowthyself update         # upgrade to the latest release
+knowthyself update --check # report whether an update is available, then exit
+knowthyself provider       # manage the endpoints --deep-eval can call
 ```
+
+`update` figures out how the running binary was installed. A plain download is replaced in place, after verifying the archive checksum against the signed release manifest. A binary owned by npm, Homebrew, or `go install` is never touched — the right command for that manager is printed instead, so the two can't fight over the same file. The dashboard footer also shows `▲ <version>` when a newer release exists; that check is cached and refreshed in the background, so it never delays startup. Set `KNOWTHYSELF_NO_UPDATE_CHECK=1` to turn it off.
 
 knowthyself reads `~/.claude` by default. Override the location with `CLAUDE_CONFIG_DIR`. The first time you run it on a real terminal, it asks whether you want to profile before it reads anything. Decline and it exits without touching your history. If there is no Claude history yet, it greets you with a friendly starting screen instead of an error.
 
@@ -70,7 +75,7 @@ On a real terminal the dashboard boots with a short power on animation, then let
 |:---:|:-------|
 | `↑` `↓` or `j` `k` | move the cursor (select a dimension or session) |
 | `←` `→` or `tab` | switch view |
-| `1` `2` `3` | jump to Overview, Sessions, or Trends |
+| `1` `2` `3` `4` | jump to Overview, Sessions, Trends, or Deep Read |
 | `r` | replay the boot animation |
 | `q` or `esc` | quit |
 
@@ -123,7 +128,50 @@ Before there is enough history to judge, knowthyself shows a **Newcomer** placeh
 
 Scores are one hundred percent deterministic heuristics computed on language agnostic structural signals: paths, code fences, error patterns, and turn shape. Prompts written in English, Hindi, or Hinglish are graded on communication quality, not on English proficiency. Every score is explainable, since the underlying counts are retained and shown in the evidence inspector.
 
-The optional `--deep-eval` flag uses your own API key to phrase the qualitative tips more naturally. It never changes a score.
+## Deep read (optional)
+
+Structural heuristics can tell whether a prompt carried a file path. They cannot tell whether the ask was understandable. `--deep-eval` reads the actual words and grades five things the deterministic scorers are blind to:
+
+| Criterion | What it asks |
+|:----------|:-------------|
+| **Goal clarity** | Does the prompt state the outcome wanted, or only an action? |
+| **Context sufficiency** | Is what the model needs supplied, or assumed? |
+| **Constraints & acceptance** | Are boundaries, non goals and done conditions stated? |
+| **Scope discipline** | Is this one coherent unit of work? |
+| **Correction quality** | When correcting, does the prompt diagnose or merely re assert? |
+
+Each is scored on an anchored 0 to 4 scale with written descriptors for every level, not a bare "rate this out of ten", because unanchored scales do not agree between models or between runs. Results appear in their own **Deep Read** tab, labelled with the model and sample size, and are never averaged into your radar. Your five dimension scores stay deterministic and entirely local whether or not you use this.
+
+### Bring any provider
+
+Register an endpoint once, then select it by name. Anything speaking the OpenAI or Anthropic wire format works, including a model running on your own machine.
+
+```sh
+knowthyself provider add          # guided: pick a starting point, then edit every field
+knowthyself provider list         # what's configured, and which is the default
+knowthyself provider test         # send one tiny request to check it works
+knowthyself provider use groq     # change the default
+knowthyself provider edit groq    # change any field, base URL included
+```
+
+`provider add` opens a picker (Anthropic, OpenAI, OpenRouter, Groq, Together, DeepSeek, Ollama, LM Studio, or anything else) and then a form where the **name, base URL, model, dialect and credential are all editable** — presets only save you a documentation lookup, they never lock a value down. Local endpoints need no key at all.
+
+Credentials can be stored in the config file (written `0600`) or, better, read from an environment variable you name — in which case the secret never touches disk.
+
+```sh
+knowthyself --deep-eval                    # uses your default provider
+knowthyself --deep-eval --provider ollama  # use a specific one
+```
+
+One-off overrides without saving anything: `--api-key`, `--base-url`, `--model`, `--api-dialect`. Environment: `KNOWTHYSELF_API_KEY`, `KNOWTHYSELF_BASE_URL`, `KNOWTHYSELF_MODEL`, `KNOWTHYSELF_API_DIALECT`; `ANTHROPIC_API_KEY` and `OPENAI_API_KEY` are honoured as fallbacks, and `ANTHROPIC_AUTH_TOKEN` is sent as an OAuth bearer token. Precedence is flags, then environment, then the selected provider, then defaults.
+
+Note a **Claude Code subscription login is not an API key** and cannot authenticate the API — deep-eval needs a key from the console, or an OAuth token.
+
+**Before anything is sent**, a consent screen shows the endpoint, the model, the exact volume, and a token estimate, and lets you page through the precise redacted text that would leave your machine. Nothing is transmitted until you accept, consent is remembered per endpoint and model, and there is no way to send anything without a terminal to approve it in.
+
+Secrets, absolute paths, emails, URLs, IPs and opaque blobs are stripped first. Every judgment the model returns must quote text that appears verbatim in the prompt it is grading; anything that fails that check is discarded, which is what stops a model inventing evidence. Results are cached against the exact sample, so re running costs nothing. If the endpoint is unreachable, the key is rejected, or the model cannot follow the schema, you get a specific message and a remedy, and the dashboard still renders from the local scores.
+
+See [`docs/DEEP_EVAL.md`](docs/DEEP_EVAL.md) for the full architecture.
 
 ## Contributing
 

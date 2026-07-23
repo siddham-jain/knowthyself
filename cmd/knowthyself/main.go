@@ -9,17 +9,20 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"golang.org/x/term"
 
 	"github.com/siddham-jain/knowthyself/internal/engine"
 	"github.com/siddham-jain/knowthyself/internal/insight"
+	"github.com/siddham-jain/knowthyself/internal/insight/deepeval"
 	"github.com/siddham-jain/knowthyself/internal/provider"
 	"github.com/siddham-jain/knowthyself/internal/provider/claude"
 	"github.com/siddham-jain/knowthyself/internal/report"
 	"github.com/siddham-jain/knowthyself/internal/store"
 	"github.com/siddham-jain/knowthyself/internal/tui"
+	"github.com/siddham-jain/knowthyself/internal/update"
 )
 
 // Build metadata, injected at release time via -ldflags "-X main.version=..." by
@@ -32,23 +35,42 @@ var (
 
 func main() {
 	if err := run(os.Args[1:]); err != nil {
-		fmt.Fprintln(os.Stderr, "knowthyself: "+err.Error())
+		// Explain appends the error's remedy when it carries one, so guidance is not
+		// lost on the way out of a subcommand.
+		fmt.Fprintln(os.Stderr, "knowthyself: "+deepeval.Explain(err))
 		os.Exit(1)
 	}
 }
 
 func run(args []string) error {
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		switch args[0] {
+		case "update":
+			return runUpdate(args[1:])
+		case "provider", "providers":
+			return runProvider(args[1:])
+		default:
+			return fmt.Errorf("unknown command %q — run `knowthyself --help` for usage", args[0])
+		}
+	}
+
 	fs := flag.NewFlagSet("knowthyself", flag.ContinueOnError)
 	var (
 		asJSON      = fs.Bool("json", false, "emit the raw profile as JSON instead of the TUI")
 		syncOnly    = fs.Bool("sync", false, "sync the cache and print a summary, then exit")
 		showVersion = fs.Bool("version", false, "print version and exit")
-		deepEval    = fs.Bool("deep-eval", false, "use an LLM (BYO API key) to phrase qualitative tips (scores stay deterministic)")
+		deepEval    = fs.Bool("deep-eval", false, "add a model-judged read of your prompts, using your own API key (scores stay deterministic and local)")
 		sourceID    = fs.String("source", claude.ID, "session source to analyze")
 		storePath   = fs.String("store", store.DefaultPath(), "path to the local cache database")
+
+		providerName = fs.String("provider", "", "saved provider to use for --deep-eval (see `knowthyself provider`)")
+		apiKey       = fs.String("api-key", "", "API key for --deep-eval (or set KNOWTHYSELF_API_KEY)")
+		baseURL      = fs.String("base-url", "", "API base URL for --deep-eval (default https://api.anthropic.com/v1)")
+		modelName    = fs.String("model", "", "model to judge with (default claude-sonnet-5)")
+		apiDialect   = fs.String("api-dialect", "", "wire format: anthropic or openai (default: inferred from --base-url)")
 	)
 	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: knowthyself [flags]\n\nProfiles how you collaborate with your AI coding assistant.\n\nflags:")
+		fmt.Fprintln(os.Stderr, "usage: knowthyself [flags]\n       knowthyself update [--check]\n       knowthyself provider <list|add|edit|use|remove|test>\n\nProfiles how you collaborate with your AI coding assistant.\n\nflags:")
 		fs.PrintDefaults()
 	}
 	if err := fs.Parse(args); err != nil {
@@ -119,27 +141,25 @@ func run(args []string) error {
 		return fmt.Errorf("no %s sessions found yet — use Claude Code a bit, then run knowthyself", *sourceID)
 	}
 
-	ie := insight.Engine(insight.Heuristic{})
-	if *deepEval {
-		// Deep-eval only phrases tips; it never changes a score. Falls back to the
-		// heuristic engine if no API key is configured.
-		if de := insight.NewDeepEval(); de != nil {
-			ie = de
-		} else {
-			fmt.Fprintln(os.Stderr, "knowthyself: --deep-eval set but no ANTHROPIC_API_KEY; using heuristic tips")
-		}
-	}
-
-	prof, err := engine.Analyze(ctx, sessions, ie, time.Now)
+	prof, err := engine.Analyze(ctx, sessions, insight.Heuristic{}, time.Now)
 	if err != nil {
 		return err
+	}
+
+	// The deep read is additive and strictly opt-in: it is layered onto a profile
+	// that is already complete, and any failure leaves that profile untouched.
+	if *deepEval {
+		flags := deepeval.Flags{Provider: *providerName, APIKey: *apiKey, BaseURL: *baseURL, Model: *modelName, Dialect: *apiDialect}
+		if err := attachDeepRead(ctx, &prof, flags, filepath.Dir(*storePath), sessions, greet); err != nil {
+			fmt.Fprintln(os.Stderr, "knowthyself: deep-eval skipped — "+deepeval.Explain(err))
+		}
 	}
 
 	var r report.Reporter
 	if *asJSON {
 		r = report.JSON{W: os.Stdout}
 	} else {
-		r = tui.New()
+		r = tui.New(update.Notice(filepath.Dir(*storePath), version))
 	}
 	return r.Render(prof)
 }
@@ -161,6 +181,12 @@ func markFirstRun(path string) error {
 	}
 	return os.WriteFile(path, []byte("welcomed\n"), 0o644)
 }
+
+// stateDir is where knowthyself keeps its cache, config, and sentinels.
+func stateDir() string { return filepath.Dir(store.DefaultPath()) }
+
+// isInteractive reports whether there is a terminal to run a guided flow in.
+func isInteractive() bool { return term.IsTerminal(int(os.Stdout.Fd())) }
 
 // termWidth returns the current terminal width, falling back to a sensible default
 // when stdout isn't a measurable TTY.

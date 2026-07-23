@@ -11,10 +11,10 @@ set -eu
 REPO="siddham-jain/knowthyself"
 BIN="knowthyself"
 
-# --- colors (amber wordmark; disabled when piped or NO_COLOR) --------------------
+# --- colors (disabled when piped or NO_COLOR) ------------------------------------
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
 	A='\033[1;38;5;208m' # amber
-	D='\033[38;5;240m'   # dim grey (the reflection)
+	D='\033[38;5;240m'   # dim grey
 	B='\033[1m'
 	Z='\033[0m'
 else
@@ -23,25 +23,14 @@ fi
 
 banner() {
 	printf '\n'
-	for row in \
-		"████  █████ █████ █     █████ █████ █████" \
-		"█   █ █     █     █     █     █       █  " \
-		"████  ███   ███   █     ███   █       █  " \
-		"█  █  █     █     █     █     █       █  " \
-		"█   █ █████ █     █████ █████ █████   █  "; do
-		printf '   %b%s%b\n' "$A" "$row" "$Z"
-	done
-	printf '   %b%s%b\n' "$D" "╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌" "$Z"
-	# reflection: rows reversed, blocks softened
-	for row in \
-		"▒   ▒ ▒▒▒▒▒ ▒     ▒▒▒▒▒ ▒▒▒▒▒ ▒▒▒▒▒   ▒  " \
-		"▒  ▒  ▒     ▒     ▒     ▒     ▒       ▒  " \
-		"▒▒▒▒  ▒▒▒   ▒▒▒   ▒     ▒▒▒   ▒       ▒  " \
-		"▒  ▒  ▒     ▒     ▒     ▒     ▒       ▒  " \
-		"▒▒▒▒  ▒▒▒▒▒ ▒▒▒▒▒ ▒     ▒▒▒▒▒ ▒▒▒▒▒ ▒▒▒▒▒"; do
-		printf '   %b%s%b\n' "$D" "$row" "$Z"
-	done
-	printf '   %bknow how you build.%b\n\n' "$D" "$Z"
+	printf '   %b┌────────────────────────────────┐%b\n' "$A" "$Z"
+	printf '   %b│%b                                %b│%b\n' "$A" "$Z" "$A" "$Z"
+	printf '   %b│%b     %bK N O W  T H Y S E L F%b     %b│%b\n' "$A" "$Z" "$A" "$Z" "$A" "$Z"
+	printf '   %b│%b                                %b│%b\n' "$A" "$Z" "$A" "$Z"
+	printf '   %b│%b         %bΓΝΩΘΙ  ΣΕΑΥΤΟΝ%b         %b│%b\n' "$A" "$Z" "$D" "$Z" "$A" "$Z"
+	printf '   %b│%b                                %b│%b\n' "$A" "$Z" "$A" "$Z"
+	printf '   %b└────────────────────────────────┘%b\n' "$A" "$Z"
+	printf '        %bknow how you build with AI%b\n\n' "$D" "$Z"
 }
 
 fail() { printf 'knowthyself: %s\n' "$1" >&2; exit 1; }
@@ -62,7 +51,7 @@ case "$os" in
 esac
 
 # --- resolve version -------------------------------------------------------------
-VERSION="${REFLECT_VERSION:-}"
+VERSION="${KNOWTHYSELF_VERSION:-}"
 if [ -z "$VERSION" ]; then
 	VERSION=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null |
 		grep '"tag_name"' | head -1 | sed -E 's/.*"tag_name" *: *"([^"]+)".*/\1/')
@@ -103,7 +92,7 @@ ans=""
 [ -r /dev/tty ] && read -r ans </dev/tty || true
 case "$ans" in
 	n | N | no | NO)
-		printf '\n  whenever you are ready:  %breflect%b\n\n' "$A" "$Z"
+		printf '\n  whenever you are ready:  %bknowthyself%b\n\n' "$A" "$Z"
 		;;
 	*)
 		printf '\n'

@@ -41,7 +41,7 @@ func advance(m model, msg tea.Msg) model {
 // settled returns a model past the boot animation AND past the first-run reveal,
 // i.e. on the graded dashboard — the state most view tests exercise.
 func settled(p profile.Profile) model {
-	m := newModel(p)
+	m := newModel(p, "")
 	m = advance(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	m.booting = false
 	m.progress = 1
@@ -51,7 +51,7 @@ func settled(p profile.Profile) model {
 
 func TestRevealThenDashboard(t *testing.T) {
 	lipgloss.SetColorProfile(0)
-	m := newModel(profileWithSessions())
+	m := newModel(profileWithSessions(), "")
 	m = advance(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	// Skip the boot animation → land on the reveal.
 	m = advance(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})
@@ -76,11 +76,11 @@ func TestRevealThenDashboard(t *testing.T) {
 
 func TestBootViewRenders(t *testing.T) {
 	lipgloss.SetColorProfile(0)
-	m := newModel(profileWithSessions())
+	m := newModel(profileWithSessions(), "")
 	m = advance(m, tea.WindowSizeMsg{Width: 120, Height: 40})
 	out := m.View()
-	if !strings.Contains(out, "INITIALIZING") {
-		t.Fatalf("boot view missing initializing banner")
+	if !strings.Contains(out, markMaxim) {
+		t.Fatalf("boot view missing the identity mark")
 	}
 	// A boot tick advances progress and requests another frame.
 	next, cmd := m.Update(tickMsg(time.Now()))
@@ -122,6 +122,10 @@ func TestTabCyclesViews(t *testing.T) {
 	if m.mode != viewTrends || !strings.Contains(m.View(), "JOURNEY") {
 		t.Fatalf("trends view not rendered")
 	}
+	m = advance(m, tea.KeyMsg{Type: tea.KeyTab})
+	if m.mode != viewDeepRead || !strings.Contains(m.View(), "DEEP READ") {
+		t.Fatalf("deep read view not rendered")
+	}
 	// Wrap back to overview.
 	m = advance(m, tea.KeyMsg{Type: tea.KeyTab})
 	if m.mode != viewOverview {
@@ -150,7 +154,7 @@ func TestSessionsDrillDown(t *testing.T) {
 }
 
 func TestAnyKeySkipsBootAndQuit(t *testing.T) {
-	m := newModel(profileWithSessions())
+	m := newModel(profileWithSessions(), "")
 	m = advance(m, tea.WindowSizeMsg{Width: 100, Height: 30})
 	// A non-quit key during boot skips the animation.
 	m = advance(m, tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'x'}})

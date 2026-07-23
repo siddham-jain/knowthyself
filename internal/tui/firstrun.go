@@ -10,9 +10,8 @@ import (
 	"github.com/siddham-jain/knowthyself/internal/design"
 )
 
-// This file is the first-run gate: the very first time knowthyself is run on a real
-// terminal, it asks whether to profile now instead of dropping a newcomer straight
-// into their dashboard. Consent first, reveal second.
+// This file is the first-run gate: on the first run at a real terminal, ask before
+// reading any history.
 
 // firstRunModel is a two-choice prompt: "yes, show me" or "not right now".
 type firstRunModel struct {
@@ -55,8 +54,8 @@ func (m firstRunModel) View() string {
 	inner := clampInt(width-2, 30, 64)
 
 	blocks := []string{}
-	if m.termW >= 46 {
-		blocks = append(blocks, wordmarkArt(), "")
+	if m.termW >= markWidth {
+		blocks = append(blocks, inscriptionArt(m.termW), "")
 	}
 	blocks = append(blocks,
 		lipgloss.NewStyle().Foreground(design.Accent).Bold(true).Render("Meet how you work with AI?"),

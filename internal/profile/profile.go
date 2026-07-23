@@ -144,4 +144,50 @@ type Profile struct {
 	Insights      []Insight         `json:"insights"`
 	Stats         Stats             `json:"stats"`
 	Sessions      []SessionSummary  `json:"sessions,omitempty"` // chronological, for drill-down & trends
+
+	// DeepRead is the optional, model-judged qualitative read (--deep-eval). Nil
+	// unless the user opted in for this run. Additive: consumers that predate it
+	// ignore the field, so its presence is not a schema break.
+	DeepRead *DeepRead `json:"deep_read,omitempty"`
+}
+
+// Confidence levels for a DeepRead, set from how much of the sample survived
+// validation.
+const (
+	ConfidenceHigh   = "high"
+	ConfidenceMedium = "medium"
+	ConfidenceLow    = "low"
+)
+
+// DeepRead is a model's reading of the actual prompt text, on criteria the
+// deterministic scorers are blind to. It is never merged into Overall and never
+// changes a Signal — presentation must keep it visibly separate.
+type DeepRead struct {
+	Model      string            `json:"model"`
+	Endpoint   string            `json:"endpoint"` // host only, never credentials
+	RubricVer  int               `json:"rubric_version"`
+	JudgedAt   time.Time         `json:"judged_at"`
+	Sample     SampleInfo        `json:"sample"`
+	Criteria   []CriterionResult `json:"criteria"`
+	Findings   []Insight         `json:"findings,omitempty"`
+	Confidence string            `json:"confidence"`
+}
+
+// SampleInfo records what the read was actually based on, so a small sample is
+// visible rather than hidden.
+type SampleInfo struct {
+	Prompts   int `json:"prompts"`   // prompts judged
+	Sessions  int `json:"sessions"`  // sessions they came from
+	Available int `json:"available"` // scorable prompts the sample was drawn from
+}
+
+// CriterionResult is one rubric criterion aggregated over the sample. Mean is on the
+// rubric's own 0..Max anchored scale, never rescaled into the 0..10 radar space.
+type CriterionResult struct {
+	Key     string  `json:"key"`
+	Title   string  `json:"title"`
+	Mean    float64 `json:"mean"`
+	Max     int     `json:"max"`
+	Judged  int     `json:"judged"` // judgments that applied to this criterion
+	Summary string  `json:"summary,omitempty"`
 }

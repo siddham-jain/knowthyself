@@ -15,18 +15,14 @@ function Write-Dim($t)   { Write-Host $t -ForegroundColor DarkGray }
 
 function Show-Banner {
 	"", `
-	"   ████  █████ █████ █     █████ █████ █████", `
-	"   █   █ █     █     █     █     █       █  ", `
-	"   ████  ███   ███   █     ███   █       █  ", `
-	"   █  █  █     █     █     █     █       █  ", `
-	"   █   █ █████ █     █████ █████ █████   █  " | ForEach-Object { Write-Amber $_ }
-	"   ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌", `
-	"   ▒   ▒ ▒▒▒▒▒ ▒     ▒▒▒▒▒ ▒▒▒▒▒ ▒▒▒▒▒   ▒  ", `
-	"   ▒  ▒  ▒     ▒     ▒     ▒     ▒       ▒  ", `
-	"   ▒▒▒▒  ▒▒▒   ▒▒▒   ▒     ▒▒▒   ▒       ▒  ", `
-	"   ▒  ▒  ▒     ▒     ▒     ▒     ▒       ▒  ", `
-	"   ▒▒▒▒  ▒▒▒▒▒ ▒▒▒▒▒ ▒     ▒▒▒▒▒ ▒▒▒▒▒ ▒▒▒▒▒", `
-	"   know how you build.`n" | ForEach-Object { Write-Dim $_ }
+	"   ┌────────────────────────────────┐", `
+	"   │                                │", `
+	"   │     K N O W  T H Y S E L F     │", `
+	"   │                                │" | ForEach-Object { Write-Amber $_ }
+	Write-Dim "   │         ΓΝΩΘΙ  ΣΕΑΥΤΟΝ         │"
+	"   │                                │", `
+	"   └────────────────────────────────┘" | ForEach-Object { Write-Amber $_ }
+	Write-Dim "        know how you build with AI`n"
 }
 
 Show-Banner
@@ -39,7 +35,7 @@ $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
 }
 
 # --- resolve version -------------------------------------------------------------
-$version = $env:REFLECT_VERSION
+$version = $env:KNOWTHYSELF_VERSION
 if (-not $version) {
 	$rel = Invoke-RestMethod "https://api.github.com/repos/$Repo/releases/latest"
 	$version = $rel.tag_name

@@ -14,6 +14,7 @@ const (
 	viewOverview viewMode = iota
 	viewSessions
 	viewTrends
+	viewDeepRead
 	viewCount
 )
 
@@ -34,6 +35,9 @@ type model struct {
 	// atReveal is the first-run persona portrait the boot lands on; any key leaves
 	// it for the graded dashboard.
 	atReveal bool
+
+	// updateNotice is a newer available version, shown in the footer.
+	updateNotice string
 }
 
 // tickMsg drives the boot animation.
@@ -46,12 +50,12 @@ const (
 	frameEvery = time.Second / 60
 )
 
-func newModel(p profile.Profile) model {
+func newModel(p profile.Profile, notice string) model {
 	// Sessions are ordered oldest-first (chronological, for the trends view), so open
 	// the Sessions list focused on the newest session — that's the work you just did
 	// and expect to see, not a months-old entry buried at the bottom.
 	sessCursor := maxInt(0, len(p.Sessions)-1)
-	return model{p: p, mode: viewOverview, sessCursor: sessCursor, booting: true, atReveal: true}
+	return model{p: p, mode: viewOverview, sessCursor: sessCursor, booting: true, atReveal: true, updateNotice: notice}
 }
 
 func (m model) Init() tea.Cmd { return tickCmd() }
@@ -119,6 +123,8 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.mode = viewSessions
 	case "3":
 		m.mode = viewTrends
+	case "4":
+		m.mode = viewDeepRead
 	case "up", "k":
 		m.moveCursor(-1)
 	case "down", "j":
