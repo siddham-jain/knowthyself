@@ -69,6 +69,7 @@ func run(args []string) error {
 		modelName    = fs.String("model", "", "model to judge with (default claude-sonnet-5)")
 		apiDialect   = fs.String("api-dialect", "", "wire format: anthropic or openai (default: inferred from --base-url)")
 	)
+	fs.BoolVar(showVersion, "v", false, "print version and exit (shorthand)")
 	fs.Usage = func() {
 		fmt.Fprintln(os.Stderr, "usage: knowthyself [flags]\n       knowthyself update [--check]\n       knowthyself provider <list|add|edit|use|remove|test>\n\nProfiles how you collaborate with your AI coding assistant.\n\nflags:")
 		fs.PrintDefaults()

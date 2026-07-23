@@ -36,7 +36,7 @@ func (e ErrNoKey) Error() string { return "deep-eval needs an API key and none i
 // Code users, and most will assume the subscription they already log in with is
 // usable here. It is not — that login does not authenticate the API.
 func (e ErrNoKey) Remedy() string {
-	return "set one with --api-key, or export KNOWTHYSELF_API_KEY (ANTHROPIC_API_KEY and OPENAI_API_KEY also work).\n" +
+	return "run `knowthyself provider add` to set one up, or pass --api-key / export KNOWTHYSELF_API_KEY.\n" +
 		"  a Claude Code subscription login is not an API key — get one at console.anthropic.com,\n" +
 		"  or export ANTHROPIC_AUTH_TOKEN if you use an OAuth token from `ant auth login`"
 }
