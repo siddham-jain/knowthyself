@@ -1,6 +1,6 @@
 {
   "name": "knowthyself",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "See how you actually collaborate with your AI coding assistant — a terminal dashboard. Installs the `knowthyself` command.",
   "bin": {
     "knowthyself": "bin/run.js"

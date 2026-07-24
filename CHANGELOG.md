@@ -5,6 +5,10 @@ editor, or agent can pick up with full context.
 
 ## [Unreleased]
 
+---
+
+## [0.3.2] - 2026-07-24
+
 ### Fixed
 - **A deep read no longer looks hung.** Judging is a long series of network round trips and nothing was printed for the whole of it: 60 prompts at 12 per chunk is 5 chunks, each able to retry a 120s request, on a `context.Background()` with no ceiling — worst case roughly 40 minutes of a silent terminal after the consent screen closed. Now a spinner reports the stage and prompt count on a single rewritten line (stderr, so `--json` stdout stays clean; suppressed when piped), the whole read is bounded by a 12-minute budget that ends in a typed `ErrTimeout` with a remedy, and chunks dropped to 8 so progress moves more often and each response is smaller. A completion line reports what was judged. `internal/insight/deepeval/run.go`, `cmd/knowthyself/spinner.go`.
 
@@ -64,6 +68,12 @@ editor, or agent can pick up with full context.
 ---
 
 ## Work Log
+
+### 2026-07-24 — 0.3.2: deep-eval progress, timeout, provider defaults
+- **What:** A deep read printed nothing between the consent screen and the dashboard. Added a single-line spinner (stderr, suppressed when piped, erases itself), a 12-minute budget on the whole read ending in a typed `ErrTimeout` with a remedy, and a completion line. Chunk size 12 → 8. Every provider preset now ships a starting model, and "enter a key now" is the default key source instead of reading from an env var.
+- **Why:** Reported as "it sent the data and then the tool is stuck with the cursor on the next line". It was not stuck: 5 chunks × (judge + repair) × a 120s timeout with one retry, on `context.Background()` with no ceiling, is up to ~40 minutes of silence.
+- **State:** `go build`, `go vet`, `go test ./...` green. Verified against a deliberately slow mock: success path, the wedged-endpoint timeout, and the schema-failure path all surface clearly. Spinner animation, counter updates, line erasure, and piped silence are covered by tests.
+- **Notes:** The preset model IDs are a first guess — model catalogues move faster than base URLs, so some may go stale; the form makes them editable and `provider test` catches a bad one immediately.
 
 ### 2026-07-24 — 0.3.1: guided provider setup, `-v`
 - **What:** `--deep-eval` with nothing configured now offers to set a provider up (confirm screen → preset picker → editable form), saves it, and continues the read in the same run, instead of silently falling back to heuristic tips. Added `-v` alongside `--version`. `ErrNoKey`'s remedy now points at `knowthyself provider add`.
