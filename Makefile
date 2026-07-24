@@ -23,8 +23,23 @@ build:
 install: build
 	@mkdir -p $(BINDIR)
 	@install -m 0755 knowthyself $(BINDIR)/knowthyself
-	@echo "installed $(VERSION) to $(BINDIR)/knowthyself"
-	@echo "it shadows the released binary until you run: make uninstall"
+	@test -x $(BINDIR)/knowthyself || { echo "install failed: $(BINDIR)/knowthyself is missing"; exit 1; }
+	@echo "installed $(VERSION)"
+	@echo "  -> $(BINDIR)/knowthyself"
+	@resolved=$$(command -v knowthyself 2>/dev/null); \
+	if [ "$$resolved" != "$(BINDIR)/knowthyself" ]; then \
+		echo ""; \
+		echo "WARNING: PATH still resolves knowthyself to"; \
+		echo "    $${resolved:-<nothing>}"; \
+		echo "  $(BINDIR) needs to come earlier in PATH than that."; \
+	fi
+	@echo ""
+	@echo "Your shell caches command paths, so in an already-open terminal run:"
+	@echo "    rehash            # zsh"
+	@echo "    hash -r           # bash"
+	@echo "then confirm with:"
+	@echo "    knowthyself --version    # should say $(VERSION)"
+	@echo "    make which               # or check every copy on PATH"
 
 ## uninstall: remove the local build, restoring the released binary
 uninstall:

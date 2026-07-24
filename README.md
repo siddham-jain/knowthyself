@@ -186,8 +186,15 @@ make which       # show every knowthyself on your PATH and its version
 ```
 
 `make install` writes to `~/.local/bin`, which precedes the npm and Homebrew
-directories on PATH, so the local build wins until you remove it. Builds are stamped
-with `git describe`, so `--version` always tells you which one you are running:
+directories on PATH, so the local build wins until you remove it.
+
+Your shell caches command locations, so **in a terminal that was already open** you
+must run `rehash` (zsh) or `hash -r` (bash) once after the first install — otherwise
+it keeps launching the old binary from its cache and nothing appears to have changed.
+`make which` shows the truth.
+
+Builds are stamped with `git describe`, so `--version` always tells you which one you
+are running:
 
 ```
 v0.3.2-2-g62f95d7-dirty   local build, 2 commits past the tag, uncommitted changes
