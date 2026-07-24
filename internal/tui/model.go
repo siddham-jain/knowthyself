@@ -42,6 +42,9 @@ type model struct {
 	// openSettings asks the caller to run the settings hub and relaunch. A nested
 	// alt-screen program cannot be started from inside this one.
 	openSettings bool
+
+	// deepReadErr explains why --deep-eval produced nothing this run.
+	deepReadErr string
 }
 
 // tickMsg drives the boot animation.

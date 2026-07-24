@@ -95,6 +95,41 @@ func TestDeepReadEmptyState(t *testing.T) {
 	}
 }
 
+// A failed deep read must explain itself on the tab. stderr is not enough: the
+// alt-screen dashboard opens over it immediately.
+func TestDeepReadShowsWhyItFailed(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	m := settled(profileWithSessions())
+	m.mode = viewDeepRead
+	m.deepReadErr = "some-model produced only 4 usable judgments out of 60 prompts\n  try a more capable model with --model"
+
+	out := m.View()
+	for _, want := range []string{"did not complete", "4 usable judgments", "more capable model", "scores above are unaffected"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("failure state missing %q", want)
+		}
+	}
+	// Without an error it stays the invitation, not a scary empty panel.
+	m.deepReadErr = ""
+	if !strings.Contains(m.View(), "No deep read yet") {
+		t.Error("with no error the tab should invite setup")
+	}
+}
+
+// The failure text must reflow like everything else.
+func TestDeepReadFailureReflows(t *testing.T) {
+	lipgloss.SetColorProfile(0)
+	for _, w := range []int{46, 60, 80, 120} {
+		m := settled(profileWithSessions())
+		m.mode = viewDeepRead
+		m.deepReadErr = "api.groq.com rejected the API key (HTTP 401)\n  check the key belongs to api.groq.com — a key from a different provider will not work here"
+		m.w, m.h = w, 40
+		if got := maxLineWidth(m.View()); got > w {
+			t.Errorf("w=%d failure state overflow: %d > %d", w, got, w)
+		}
+	}
+}
+
 // The deep read is model-judged on a different scale; the panel must say so, or it
 // reads as another deterministic score.
 func TestDeepReadLabelsItsProvenance(t *testing.T) {

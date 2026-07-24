@@ -153,10 +153,12 @@ func run(args []string) error {
 
 	// The deep read is additive and strictly opt-in: it is layered onto a profile
 	// that is already complete, and any failure leaves that profile untouched.
+	var deepReadErr string
 	if *deepEval {
 		flags := deepeval.Flags{Provider: *providerName, APIKey: *apiKey, BaseURL: *baseURL, Model: *modelName, Dialect: *apiDialect}
 		if err := attachDeepRead(ctx, &prof, flags, filepath.Dir(*storePath), sessions, greet); err != nil {
-			fmt.Fprintln(os.Stderr, "knowthyself: deep-eval skipped — "+deepeval.Explain(err))
+			deepReadErr = deepeval.Explain(err)
+			fmt.Fprintln(os.Stderr, "knowthyself: deep-eval skipped — "+deepReadErr)
 		}
 	}
 
@@ -164,7 +166,9 @@ func run(args []string) error {
 	if *asJSON {
 		r = report.JSON{W: os.Stdout}
 	} else {
-		r = tui.New(update.Notice(filepath.Dir(*storePath), version), filepath.Dir(*storePath))
+		rep := tui.New(update.Notice(filepath.Dir(*storePath), version), filepath.Dir(*storePath))
+		rep.DeepReadErr = deepReadErr
+		r = rep
 	}
 	return r.Render(prof)
 }

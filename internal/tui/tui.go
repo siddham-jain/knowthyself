@@ -27,6 +27,10 @@ type Reporter struct {
 	Notice string
 	// Dir is knowthyself's state directory, so the dashboard can open settings.
 	Dir string
+	// DeepReadErr explains why a requested deep read produced nothing. It is shown
+	// on the Deep Read tab: printing it to stderr is useless, because the alt-screen
+	// dashboard opens immediately and covers it.
+	DeepReadErr string
 }
 
 // New returns a TUI reporter writing to stdout.
@@ -54,7 +58,7 @@ func (r Reporter) Render(p profile.Profile) error {
 		w = os.Stdout
 	}
 	if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
-		return runInteractive(p, r.Notice, r.Dir)
+		return runInteractive(p, r.Notice, r.Dir, r.DeepReadErr)
 	}
 	return renderStatic(w, p)
 }
@@ -62,9 +66,11 @@ func (r Reporter) Render(p profile.Profile) error {
 // runInteractive runs the dashboard, and relaunches it after the settings hub. Bubble
 // Tea cannot nest alt-screen programs, so settings runs between two dashboard
 // programs rather than inside one.
-func runInteractive(p profile.Profile, notice, dir string) error {
+func runInteractive(p profile.Profile, notice, dir, deepErr string) error {
 	for {
-		final, err := tea.NewProgram(newModel(p, notice), tea.WithAltScreen()).Run()
+		m := newModel(p, notice)
+		m.deepReadErr = deepErr
+		final, err := tea.NewProgram(m, tea.WithAltScreen()).Run()
 		if err != nil {
 			return err
 		}

@@ -20,14 +20,38 @@ const MaxLevelFallback = 4
 func (m model) deepReadView(lay layout) string {
 	dr := m.p.DeepRead
 	if dr == nil {
-		return panelBox(lay.w).Render(design.Dim.Render(wrap(
-			"No deep read yet. Press s to set up a provider, then run `knowthyself --deep-eval` for a written read of how you phrase things. Your scores stay local either way.",
-			textArea(lay.w))))
+		return panelBox(lay.w).Render(m.noDeepRead(textArea(lay.w)))
 	}
 
 	criteria := func(total int) string { return criteriaPanel(dr, total) }
 	findings := func(total int) string { return findingsPanel(dr, total) }
 	return lay.stack(criteria, findings, radarWidth(lay))
+}
+
+// noDeepRead explains why the tab is empty. When a read was attempted and failed,
+// the reason belongs here: it was printed to stderr just before the alt-screen
+// dashboard opened over it, so this is the only place the user can still read it.
+func (m model) noDeepRead(area int) string {
+	if m.deepReadErr == "" {
+		return design.Dim.Render(wrap(
+			"No deep read yet. Press s to set up a provider, then run `knowthyself --deep-eval` for a written read of how you phrase things. Your scores stay local either way.",
+			area))
+	}
+
+	var b strings.Builder
+	b.WriteString(lipgloss.NewStyle().Foreground(design.Danger).Bold(true).
+		Render("The deep read did not complete.") + "\n\n")
+	for i, line := range strings.Split(m.deepReadErr, "\n") {
+		style := lipgloss.NewStyle().Foreground(design.Ink)
+		if i > 0 {
+			style = design.Dim
+		}
+		b.WriteString(style.Render(wrap(strings.TrimSpace(line), area)) + "\n")
+	}
+	b.WriteString("\n" + design.Dim.Render(wrap(
+		"Your scores above are unaffected — they are computed locally and never depend on this. Press s to change the provider or model, then run `knowthyself --deep-eval` again.",
+		area)))
+	return strings.TrimRight(b.String(), "\n")
 }
 
 func criteriaPanel(dr *profile.DeepRead, total int) string {

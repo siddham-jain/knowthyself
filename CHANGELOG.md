@@ -12,6 +12,7 @@ editor, or agent can pick up with full context.
 - **Real help.** `knowthyself help` and `help <command>` now work — previously only `--help` did, and `help` errored. Task-oriented output with examples instead of Go's alphabetical flag dump; rare flags moved behind `--help-all`. Unknown commands suggest the nearest real one (`proivder` → `provider`). One command table in `cmd/knowthyself/help.go` drives dispatch, help and suggestions so they cannot drift.
 
 ### Fixed
+- **A failed deep read looked like nothing happened.** The failure was printed to stderr and then immediately covered by the alt-screen dashboard, so the Deep Read tab showed its generic "no deep read yet" placeholder and the reason was never seen. The tab now states that the read did not complete, shows the specific error and its remedy, and notes that the deterministic scores are unaffected. `internal/tui/deepread.go` (`noDeepRead`), threaded through `tui.Reporter.DeepReadErr`.
 - **`provider add NAME --flag …` silently ignored every flag.** Go's `flag` package stops parsing at the first positional argument, so the name swallowed the rest. Positionals are now pulled off before parsing.
 
 ---
