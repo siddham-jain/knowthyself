@@ -62,5 +62,13 @@ internal/design      palette, borders, shared styles
 
 ## Working
 
-- `make build` / `make test` / `make lint` (`go vet`). All three green before done.
+- `make build` / `make test` / `make lint`. All three green before done, or
+  `make release-check` for all of it at once.
+- **Never test against the real config.** `make sandbox ARGS="..."` runs against a
+  throwaway `XDG_CONFIG_HOME` in `.sandbox/`; the real one at `~/.config/knowthyself`
+  holds a live API key and a run of `--deep-eval` costs real money.
+- **Never publish to test a fix.** `make install` puts the local build on PATH ahead
+  of the released one; `make uninstall` restores it; `make which` shows which is
+  active. Builds are stamped with `git describe`, so `--version` distinguishes a local
+  build from a release.
 - Update `CHANGELOG.md` after each meaningful unit of work.

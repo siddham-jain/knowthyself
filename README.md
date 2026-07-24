@@ -174,13 +174,55 @@ Secrets, absolute paths, emails, URLs, IPs and opaque blobs are stripped first. 
 
 See [`docs/DEEP_EVAL.md`](docs/DEEP_EVAL.md) for the full architecture.
 
+## Developing
+
+Test a change locally before releasing anything — you should never have to publish to
+find out whether a fix works.
+
+```sh
+make install     # put this build on your PATH, shadowing the released binary
+make uninstall   # remove it, restoring the released binary
+make which       # show every knowthyself on your PATH and its version
+```
+
+`make install` writes to `~/.local/bin`, which precedes the npm and Homebrew
+directories on PATH, so the local build wins until you remove it. Builds are stamped
+with `git describe`, so `--version` always tells you which one you are running:
+
+```
+v0.3.2-2-g62f95d7-dirty   local build, 2 commits past the tag, uncommitted changes
+0.3.2                     a real release
+```
+
+Run without installing:
+
+```sh
+make dev     ARGS="--deep-eval"    # against your real config
+make sandbox ARGS="--deep-eval"    # against a throwaway config in .sandbox/
+```
+
+`make sandbox` keeps its configuration inside the repo (gitignored), so an experiment
+can never touch your real providers or API keys. Configure it once:
+
+```sh
+make sandbox ARGS="provider add openrouter --key-env OPENROUTER_API_KEY"
+make sandbox ARGS="provider test"
+```
+
+Before tagging a release:
+
+```sh
+make release-check   # vet, gofmt, tests, build
+```
+
 ## Contributing
 
-Issues and pull requests are welcome. Build and test locally with:
+Issues and pull requests are welcome.
 
 ```sh
 make build   # produces ./knowthyself
 make test    # unit and golden tests
+make lint    # go vet + gofmt check
 ```
 
 ## License
