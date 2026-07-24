@@ -38,6 +38,10 @@ type model struct {
 
 	// updateNotice is a newer available version, shown in the footer.
 	updateNotice string
+
+	// openSettings asks the caller to run the settings hub and relaunch. A nested
+	// alt-screen program cannot be started from inside this one.
+	openSettings bool
 }
 
 // tickMsg drives the boot animation.
@@ -129,6 +133,10 @@ func (m model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.moveCursor(-1)
 	case "down", "j":
 		m.moveCursor(1)
+	case "s":
+		// Settings are wanted exactly where you notice you need them.
+		m.openSettings = true
+		return m, tea.Quit
 	case "r":
 		// replay the boot animation, back to the reveal
 		m.booting = true

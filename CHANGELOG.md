@@ -5,6 +5,15 @@ editor, or agent can pick up with full context.
 
 ## [Unreleased]
 
+### Added
+- **Flat commands for the things you change constantly**, so a model swap is one line instead of a wizard: `knowthyself model [id]`, `use <provider>`, `key [--env NAME]`, and `config`. `config` opens an editable settings screen on a terminal and prints plain text when piped, so it doubles as a status command. `cmd/knowthyself/config.go`.
+- **Settings hub** — one screen listing every provider with its endpoint, model and key source; `⏎ edit · a add · u use · t test · x remove`. Reached by `knowthyself config` and by `s` from the dashboard, so there is one place to learn rather than a set of commands to memorise. It reuses the existing wizard, picker and confirm screens rather than duplicating them. `internal/tui/settings.go`.
+- **`provider add` / `edit` take flags**, so nothing needs a terminal: `knowthyself provider add groq --key-env GROQ_API_KEY` (a bare preset name fills in the endpoint and model), or `provider edit openrouter --model openai/gpt-4o-mini`. Partial flags prefill the wizard instead of replacing it. `knowthyself provider presets` lists what `--preset` accepts.
+- **Real help.** `knowthyself help` and `help <command>` now work — previously only `--help` did, and `help` errored. Task-oriented output with examples instead of Go's alphabetical flag dump; rare flags moved behind `--help-all`. Unknown commands suggest the nearest real one (`proivder` → `provider`). One command table in `cmd/knowthyself/help.go` drives dispatch, help and suggestions so they cannot drift.
+
+### Fixed
+- **`provider add NAME --flag …` silently ignored every flag.** Go's `flag` package stops parsing at the first positional argument, so the name swallowed the rest. Positionals are now pulled off before parsing.
+
 ---
 
 ## [0.3.2] - 2026-07-24

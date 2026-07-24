@@ -56,13 +56,14 @@ More package managers (Homebrew, Scoop, winget, AUR) are planned.
 ## Usage
 
 ```sh
-knowthyself                # sync, then open the interactive dashboard
-knowthyself --json         # print the raw profile as JSON (piped output stays scriptable)
-knowthyself --sync         # refresh the local cache, print a summary, then exit
-knowthyself --version      # print the version
-knowthyself update         # upgrade to the latest release
-knowthyself update --check # report whether an update is available, then exit
-knowthyself provider       # manage the endpoints --deep-eval can call
+knowthyself                          # open the dashboard
+knowthyself config                   # see and edit your setup
+knowthyself model gpt-4o-mini        # change the judging model
+knowthyself use groq                 # switch provider
+knowthyself key                      # set a key (never echoed)
+knowthyself --deep-eval              # add a model-judged read
+knowthyself update                   # upgrade
+knowthyself help <command>           # detail on anything
 ```
 
 `update` figures out how the running binary was installed. A plain download is replaced in place, after verifying the archive checksum against the signed release manifest. A binary owned by npm, Homebrew, or `go install` is never touched — the right command for that manager is printed instead, so the two can't fight over the same file. The dashboard footer also shows `▲ <version>` when a newer release exists; that check is cached and refreshed in the background, so it never delays startup. Set `KNOWTHYSELF_NO_UPDATE_CHECK=1` to turn it off.

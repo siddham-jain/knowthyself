@@ -442,7 +442,7 @@ func (m model) footer(w int) string {
 	if lipgloss.Width(left) > w {
 		left = m.tabBar(tabLabelsShort)
 	}
-	keys := design.Dim.Render("↑↓ select · ←→/tab view · r replay · q quit")
+	keys := design.Dim.Render("↑↓ select · ←→/tab view · s settings · q quit")
 	line := lipgloss.NewStyle().Foreground(design.Faint).Render(strings.Repeat("─", w))
 
 	// The update nudge is the first thing dropped when the footer runs out of room.
@@ -456,7 +456,7 @@ func (m model) footer(w int) string {
 	gap := w - lipgloss.Width(left) - lipgloss.Width(keys)
 	if gap < 1 {
 		// Not enough room on one line: stack keys under the tabs.
-		short := design.Dim.Render("tab view · q quit")
+		short := design.Dim.Render("tab · s settings · q quit")
 		if w-lipgloss.Width(left) >= lipgloss.Width(short)+1 {
 			g := w - lipgloss.Width(left) - lipgloss.Width(short)
 			return line + "\n" + left + strings.Repeat(" ", g) + short

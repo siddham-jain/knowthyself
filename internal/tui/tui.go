@@ -25,10 +25,14 @@ type Reporter struct {
 	W io.Writer
 	// Notice is a newer available version, shown in the footer. Empty for none.
 	Notice string
+	// Dir is knowthyself's state directory, so the dashboard can open settings.
+	Dir string
 }
 
 // New returns a TUI reporter writing to stdout.
-func New(notice string) Reporter { return Reporter{W: os.Stdout, Notice: notice} }
+func New(notice, dir string) Reporter {
+	return Reporter{W: os.Stdout, Notice: notice, Dir: dir}
+}
 
 // Layout constants. Widths below are *rendered* totals; a panel rendered at total T
 // sets a Lip Gloss content width of T-2 (border) and wraps text to T-4 (border +
@@ -50,14 +54,35 @@ func (r Reporter) Render(p profile.Profile) error {
 		w = os.Stdout
 	}
 	if f, ok := w.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
-		return runInteractive(p, r.Notice)
+		return runInteractive(p, r.Notice, r.Dir)
 	}
 	return renderStatic(w, p)
 }
 
-func runInteractive(p profile.Profile, notice string) error {
-	_, err := tea.NewProgram(newModel(p, notice), tea.WithAltScreen()).Run()
-	return err
+// runInteractive runs the dashboard, and relaunches it after the settings hub. Bubble
+// Tea cannot nest alt-screen programs, so settings runs between two dashboard
+// programs rather than inside one.
+func runInteractive(p profile.Profile, notice, dir string) error {
+	for {
+		final, err := tea.NewProgram(newModel(p, notice), tea.WithAltScreen()).Run()
+		if err != nil {
+			return err
+		}
+		if !final.(model).openSettings {
+			return nil
+		}
+		if err := RunSettings(termWidthOf(dir), dir); err != nil {
+			return err
+		}
+	}
+}
+
+// termWidthOf reports the current terminal width for a freshly launched sub-program.
+func termWidthOf(string) int {
+	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+		return w
+	}
+	return 80
 }
 
 // renderStatic writes the non-interactive single frame at a fixed width.

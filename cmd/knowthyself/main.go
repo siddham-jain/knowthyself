@@ -43,15 +43,22 @@ func main() {
 }
 
 func run(args []string) error {
-	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+	// `--help`/`-h`/`help` all reach the same curated help rather than Go's flag dump.
+	if len(args) > 0 {
 		switch args[0] {
-		case "update":
-			return runUpdate(args[1:])
-		case "provider", "providers":
-			return runProvider(args[1:])
-		default:
-			return fmt.Errorf("unknown command %q — run `knowthyself --help` for usage", args[0])
+		case "help", "--help", "-h":
+			return runHelp(args[1:])
+		case "--help-all":
+			printHelp(os.Stdout, true)
+			return nil
 		}
+	}
+	if len(args) > 0 && !strings.HasPrefix(args[0], "-") {
+		c, ok := lookupCommand(args[0])
+		if !ok {
+			return unknownCommand(args[0])
+		}
+		return c.run(args[1:])
 	}
 
 	fs := flag.NewFlagSet("knowthyself", flag.ContinueOnError)
@@ -70,10 +77,7 @@ func run(args []string) error {
 		apiDialect   = fs.String("api-dialect", "", "wire format: anthropic or openai (default: inferred from --base-url)")
 	)
 	fs.BoolVar(showVersion, "v", false, "print version and exit (shorthand)")
-	fs.Usage = func() {
-		fmt.Fprintln(os.Stderr, "usage: knowthyself [flags]\n       knowthyself update [--check]\n       knowthyself provider <list|add|edit|use|remove|test>\n\nProfiles how you collaborate with your AI coding assistant.\n\nflags:")
-		fs.PrintDefaults()
-	}
+	fs.Usage = func() { printHelp(os.Stderr, false) }
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -160,7 +164,7 @@ func run(args []string) error {
 	if *asJSON {
 		r = report.JSON{W: os.Stdout}
 	} else {
-		r = tui.New(update.Notice(filepath.Dir(*storePath), version))
+		r = tui.New(update.Notice(filepath.Dir(*storePath), version), filepath.Dir(*storePath))
 	}
 	return r.Render(prof)
 }

@@ -21,7 +21,7 @@ func (m model) deepReadView(lay layout) string {
 	dr := m.p.DeepRead
 	if dr == nil {
 		return panelBox(lay.w).Render(design.Dim.Render(wrap(
-			"No deep read yet. Run `knowthyself --deep-eval` with your own API key to add a written read of how you phrase things. Your scores stay local either way.",
+			"No deep read yet. Press s to set up a provider, then run `knowthyself --deep-eval` for a written read of how you phrase things. Your scores stay local either way.",
 			textArea(lay.w))))
 	}
 
