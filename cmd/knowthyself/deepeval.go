@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/siddham-jain/knowthyself/internal/insight/deepeval"
 	"github.com/siddham-jain/knowthyself/internal/model"
@@ -28,11 +29,18 @@ func attachDeepRead(ctx context.Context, prof *profile.Profile, flags deepeval.F
 		}
 	}
 
-	read, err := deepeval.Run(ctx, cfg, dir, sessions, consenter(interactive))
+	// Progress goes to stderr so --json stdout stays clean and pipeable.
+	spin := newSpinner(os.Stderr, interactive)
+	defer spin.Stop()
+
+	read, err := deepeval.Run(ctx, cfg, dir, sessions, consenter(interactive), spin.Update)
+	spin.Stop()
 	if err != nil {
 		return err
 	}
 	prof.DeepRead = read
+	fmt.Fprintf(os.Stderr, "  deep read done — %d prompts judged by %s (%s confidence)\n",
+		read.Sample.Prompts, read.Model, read.Confidence)
 	return nil
 }
 

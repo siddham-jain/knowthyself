@@ -176,6 +176,9 @@ func TestEveryPresetIsUsable(t *testing.T) {
 		if p.Name == "custom" {
 			continue // deliberately blank; the user fills it in
 		}
+		if p.Model == "" {
+			t.Errorf("preset %q has no starting model", p.Name)
+		}
 		if !strings.HasPrefix(p.BaseURL, "http") {
 			t.Errorf("preset %q has no usable base URL: %q", p.Name, p.BaseURL)
 		}

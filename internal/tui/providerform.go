@@ -172,14 +172,13 @@ func (m providerModel) keyPreset(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			Dialect: string(p.Dialect),
 			KeyEnv:  p.KeyEnv,
 		})
-		if p.KeyEnv == "" {
-			m.fields[fKeySource].choice = 2 // local presets need no key
-			if p.BaseURL != "" && !strings.Contains(p.BaseURL, "localhost") {
-				m.fields[fKeySource].choice = 0
-			}
-		} else {
-			m.fields[fKeySource].choice = 1
+		// Pasting a key is what almost everyone is here to do, so it is the default;
+		// a local endpoint needs none. Reading from an env var stays one ←/→ away.
+		m.fields[fKeySource].choice = 0
+		if p.BaseURL != "" && strings.Contains(p.BaseURL, "localhost") {
+			m.fields[fKeySource].choice = 2
 		}
+		m.fields[fKeyValue].value = ""
 		m.syncKeyField()
 		m.step = stepForm
 		m.fCurs = fName

@@ -94,7 +94,7 @@ func TestRunEndToEnd(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{APIKey: "k", BaseURL: srv.URL, Model: "test-model", Dialect: DialectOpenAI}
-	read, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent)
+	read, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent, nil)
 	if err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -131,7 +131,7 @@ func TestRunSendsNothingSecret(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{APIKey: "k", BaseURL: srv.URL, Model: "test-model", Dialect: DialectOpenAI}
-	if _, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent); err != nil {
+	if _, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent, nil); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
 
@@ -157,7 +157,7 @@ func TestRunRespectsRefusal(t *testing.T) {
 
 	cfg := Config{APIKey: "k", BaseURL: srv.URL, Model: "m", Dialect: DialectOpenAI}
 	_, err := Run(context.Background(), cfg, t.TempDir(), testSessions(),
-		func(Config, Sample) (bool, error) { return false, nil })
+		func(Config, Sample) (bool, error) { return false, nil }, nil)
 
 	if _, ok := err.(ErrDeclined); !ok {
 		t.Fatalf("err = %v, want ErrDeclined", err)
@@ -178,7 +178,7 @@ func TestRunUsesCache(t *testing.T) {
 
 	dir := t.TempDir()
 	cfg := Config{APIKey: "k", BaseURL: srv.URL, Model: "m", Dialect: DialectOpenAI}
-	if _, err := Run(context.Background(), cfg, dir, testSessions(), alwaysConsent); err != nil {
+	if _, err := Run(context.Background(), cfg, dir, testSessions(), alwaysConsent, nil); err != nil {
 		t.Fatalf("first run: %v", err)
 	}
 	rec.mu.Lock()
@@ -188,7 +188,7 @@ func TestRunUsesCache(t *testing.T) {
 	if _, err := Run(context.Background(), cfg, dir, testSessions(), func(Config, Sample) (bool, error) {
 		t.Error("cached run must not ask for consent again")
 		return true, nil
-	}); err != nil {
+	}, nil); err != nil {
 		t.Fatalf("second run: %v", err)
 	}
 	rec.mu.Lock()
@@ -206,7 +206,7 @@ func TestRunAuthFailure(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{APIKey: "bad", BaseURL: srv.URL, Model: "m", Dialect: DialectOpenAI}
-	_, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent)
+	_, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent, nil)
 	if err == nil {
 		t.Fatal("expected an error")
 	}
@@ -227,7 +227,7 @@ func TestRunAbandonsOnGarbage(t *testing.T) {
 	defer srv.Close()
 
 	cfg := Config{APIKey: "k", BaseURL: srv.URL, Model: "weak", Dialect: DialectOpenAI}
-	_, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent)
+	_, err := Run(context.Background(), cfg, t.TempDir(), testSessions(), alwaysConsent, nil)
 	if _, ok := err.(ErrUnusable); !ok {
 		t.Fatalf("err = %T (%v), want ErrUnusable", err, err)
 	}

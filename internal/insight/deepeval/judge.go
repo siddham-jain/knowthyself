@@ -9,7 +9,7 @@ import (
 
 // chunkSize is how many prompts are judged per call. Chunks are judged
 // independently so one poisoned chunk can be dropped without discarding the run.
-const chunkSize = 12
+const chunkSize = 8
 
 // judgment is one criterion's verdict on one prompt.
 type judgment struct {

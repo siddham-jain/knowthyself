@@ -5,6 +5,13 @@ editor, or agent can pick up with full context.
 
 ## [Unreleased]
 
+### Fixed
+- **A deep read no longer looks hung.** Judging is a long series of network round trips and nothing was printed for the whole of it: 60 prompts at 12 per chunk is 5 chunks, each able to retry a 120s request, on a `context.Background()` with no ceiling — worst case roughly 40 minutes of a silent terminal after the consent screen closed. Now a spinner reports the stage and prompt count on a single rewritten line (stderr, so `--json` stdout stays clean; suppressed when piped), the whole read is bounded by a 12-minute budget that ends in a typed `ErrTimeout` with a remedy, and chunks dropped to 8 so progress moves more often and each response is smaller. A completion line reports what was judged. `internal/insight/deepeval/run.go`, `cmd/knowthyself/spinner.go`.
+
+### Changed
+- **Every provider preset now ships a starting model**, so the field is never blank: `gpt-4o-mini`, `openai/gpt-4o-mini`, `llama-3.3-70b-versatile`, `deepseek-chat`, `llama3.1`, and so on. Model catalogues move faster than base URLs, so these are a first guess the form lets you edit and `provider test` checks immediately.
+- **"Enter a key now" is the default key source** when adding a provider — pasting a key is what almost everyone is doing. Reading from an environment variable is one ←/→ away, and a local endpoint still defaults to needing no key.
+
 ---
 
 ## [0.3.1] - 2026-07-24

@@ -2,6 +2,7 @@ package deepeval
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/siddham-jain/knowthyself/internal/model"
@@ -11,6 +12,35 @@ import (
 // Consenter is asked to approve a sample before it leaves the machine. Returning
 // false aborts the read without sending anything.
 type Consenter func(cfg Config, s Sample) (bool, error)
+
+// Progress reports how far judging has got so the caller can show it. Judging is a
+// long series of network round trips; without this the terminal sits silent for
+// minutes and looks hung.
+type Progress func(stage string, done, total int)
+
+// Judging stages reported through Progress.
+const (
+	StageJudging = "judging your prompts"
+	StageWriting = "writing up what to change"
+)
+
+// runBudget bounds the whole read. Five chunks that each retry a slow endpoint can
+// otherwise run for the better part of an hour with nothing on screen.
+const runBudget = 12 * time.Minute
+
+// ErrTimeout reports that the read ran out of its overall budget.
+type ErrTimeout struct {
+	Host  string
+	After time.Duration
+}
+
+func (e ErrTimeout) Error() string {
+	return fmt.Sprintf("%s did not finish the read in time", e.Host)
+}
+func (e ErrTimeout) Remedy() string {
+	return fmt.Sprintf("a read is given %s — that endpoint or model is slower than that.\n"+
+		"  try a faster model with --model, or another provider with --provider", e.After)
+}
 
 // ErrDeclined reports that the user refused to send the sample.
 type ErrDeclined struct{}
@@ -31,7 +61,10 @@ func (ErrNoPrompts) Remedy() string {
 //
 // The pipeline is: sample, redact, consent, chunk, judge, validate, aggregate,
 // synthesise, cache.
-func Run(ctx context.Context, cfg Config, dir string, sessions []model.Session, consent Consenter) (*profile.DeepRead, error) {
+func Run(ctx context.Context, cfg Config, dir string, sessions []model.Session, consent Consenter, progress Progress) (*profile.DeepRead, error) {
+	if progress == nil {
+		progress = func(string, int, int) {}
+	}
 	sample := Build(sessions, cfg.MaxPrompts, cfg.CharBudget)
 	if len(sample.Prompts) == 0 {
 		return nil, ErrNoPrompts{}
@@ -55,12 +88,26 @@ func Run(ctx context.Context, cfg Config, dir string, sessions []model.Session, 
 		}
 	}
 
+	// The budget covers every call, so a wedged endpoint ends with a clear timeout
+	// rather than an indefinite wait.
+	ctx, cancel := context.WithTimeout(ctx, runBudget)
+	defer cancel()
+
 	client := NewClient(cfg)
 	var judgments []judgment
 	var firstErr error
+	done := 0
+	total := len(sample.Prompts)
+	progress(StageJudging, 0, total)
+
 	for _, chunk := range chunks(sample.Prompts, chunkSize) {
 		got, err := judgeChunk(ctx, client, chunk)
+		done += len(chunk)
+		progress(StageJudging, done, total)
 		if err != nil {
+			if ctx.Err() != nil {
+				return nil, ErrTimeout{Host: cfg.Host(), After: runBudget}
+			}
 			// An auth or format error will repeat on every chunk; stop early rather
 			// than hammering the endpoint with the same broken request.
 			if firstErr == nil {
@@ -82,6 +129,7 @@ func Run(ctx context.Context, cfg Config, dir string, sessions []model.Session, 
 		return nil, ErrUnusable{Model: cfg.Model, Valid: judged(judgments), Sample: len(sample.Prompts)}
 	}
 
+	progress(StageWriting, total, total)
 	results := aggregate(judgments)
 	read := &profile.DeepRead{
 		Model:      cfg.Model,

@@ -60,16 +60,19 @@ type Preset struct {
 }
 
 // Presets are offered in this order when adding a provider.
+// Every preset carries a starting model so the field is never blank. Model
+// catalogues change far faster than base URLs, so treat these as a first guess the
+// user edits — `knowthyself provider test` reports a wrong one immediately.
 var Presets = []Preset{
 	{Name: "anthropic", Label: "Anthropic", BaseURL: "https://api.anthropic.com/v1", Model: defaultModel, Dialect: DialectAnthropic, KeyEnv: "ANTHROPIC_API_KEY"},
-	{Name: "openai", Label: "OpenAI", BaseURL: "https://api.openai.com/v1", Dialect: DialectOpenAI, KeyEnv: "OPENAI_API_KEY"},
-	{Name: "openrouter", Label: "OpenRouter", BaseURL: "https://openrouter.ai/api/v1", Dialect: DialectOpenAI, KeyEnv: "OPENROUTER_API_KEY"},
-	{Name: "groq", Label: "Groq", BaseURL: "https://api.groq.com/openai/v1", Dialect: DialectOpenAI, KeyEnv: "GROQ_API_KEY"},
-	{Name: "together", Label: "Together AI", BaseURL: "https://api.together.xyz/v1", Dialect: DialectOpenAI, KeyEnv: "TOGETHER_API_KEY"},
-	{Name: "deepseek", Label: "DeepSeek", BaseURL: "https://api.deepseek.com/v1", Dialect: DialectOpenAI, KeyEnv: "DEEPSEEK_API_KEY"},
-	{Name: "ollama", Label: "Ollama (local, no key)", BaseURL: "http://localhost:11434/v1", Dialect: DialectOpenAI},
-	{Name: "lmstudio", Label: "LM Studio (local, no key)", BaseURL: "http://localhost:1234/v1", Dialect: DialectOpenAI},
-	{Name: "custom", Label: "Something else — any OpenAI-compatible endpoint", Dialect: DialectOpenAI},
+	{Name: "openai", Label: "OpenAI", BaseURL: "https://api.openai.com/v1", Model: "gpt-4o-mini", Dialect: DialectOpenAI, KeyEnv: "OPENAI_API_KEY"},
+	{Name: "openrouter", Label: "OpenRouter", BaseURL: "https://openrouter.ai/api/v1", Model: "openai/gpt-4o-mini", Dialect: DialectOpenAI, KeyEnv: "OPENROUTER_API_KEY"},
+	{Name: "groq", Label: "Groq", BaseURL: "https://api.groq.com/openai/v1", Model: "llama-3.3-70b-versatile", Dialect: DialectOpenAI, KeyEnv: "GROQ_API_KEY"},
+	{Name: "together", Label: "Together AI", BaseURL: "https://api.together.xyz/v1", Model: "meta-llama/Llama-3.3-70B-Instruct-Turbo", Dialect: DialectOpenAI, KeyEnv: "TOGETHER_API_KEY"},
+	{Name: "deepseek", Label: "DeepSeek", BaseURL: "https://api.deepseek.com/v1", Model: "deepseek-chat", Dialect: DialectOpenAI, KeyEnv: "DEEPSEEK_API_KEY"},
+	{Name: "ollama", Label: "Ollama (local, no key)", BaseURL: "http://localhost:11434/v1", Model: "llama3.1", Dialect: DialectOpenAI},
+	{Name: "lmstudio", Label: "LM Studio (local, no key)", BaseURL: "http://localhost:1234/v1", Model: "local-model", Dialect: DialectOpenAI},
+	{Name: "custom", Label: "Something else — any OpenAI-compatible endpoint", Model: "", Dialect: DialectOpenAI},
 }
 
 // LookupPreset finds a preset by name.
