@@ -5,6 +5,9 @@ editor, or agent can pick up with full context.
 
 ## [Unreleased]
 
+### Changed
+- **Deep-eval caches the rubric prefix across chunk calls.** The judging system prompt (rubric + rules) is identical on every chunk, so the Anthropic request now marks it as an ephemeral cache breakpoint (`cache_control`); each subsequent chunk reuses the cached prefix instead of re-processing it, cutting per-call latency and input cost. Only the rubric is cached — the per-chunk user message is not. OpenAI-dialect endpoints get the same benefit automatically via their own prefix caching. `internal/insight/deepeval/client.go`.
+
 ### Added
 - **Flat commands for the things you change constantly**, so a model swap is one line instead of a wizard: `knowthyself model [id]`, `use <provider>`, `key [--env NAME]`, and `config`. `config` opens an editable settings screen on a terminal and prints plain text when piped, so it doubles as a status command. `cmd/knowthyself/config.go`.
 - **Settings hub** — one screen listing every provider with its endpoint, model and key source; `⏎ edit · a add · u use · t test · x remove`. Reached by `knowthyself config` and by `s` from the dashboard, so there is one place to learn rather than a set of commands to memorise. It reuses the existing wizard, picker and confirm screens rather than duplicating them. `internal/tui/settings.go`.

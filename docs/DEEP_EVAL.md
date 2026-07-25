@@ -188,6 +188,12 @@ approval path — no consent, no send.
 Chunks of 12 prompts, judged independently, temperature 0, fixed `max_tokens`.
 Independence means one poisoned chunk is droppable without discarding the run.
 
+The rubric system prompt is identical on every chunk, so it is sent as an ephemeral
+cache breakpoint (`cache_control`) on the Anthropic dialect; each subsequent chunk
+reuses the cached prefix rather than re-processing it. Only the rubric is cached — the
+per-chunk prompts are not. OpenAI-compatible endpoints get the equivalent automatically
+through their own prefix caching.
+
 The response shape is specified in the prompt and the first JSON object is extracted
 from the reply (tolerating code fences), rather than relying on native
 structured-output support. BYOK is the reason: support for it varies widely across
