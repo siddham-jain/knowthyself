@@ -7,6 +7,7 @@ editor, or agent can pick up with full context.
 
 ### Changed
 - **Deep-eval judges prompt chunks concurrently** instead of one after another, cutting wall-clock roughly in proportion to the worker count with no change to results (chunks are independent by construction). Four run at once by default; tune with `--concurrency` or `KNOWTHYSELF_CONCURRENCY` (clamped to 16), and drop it to 1 on a rate-limited free tier. A hard error still stops the rest early rather than repeating a broken request across every chunk. `internal/insight/deepeval/run.go` (`judgeChunks`).
+- **Deep-eval caches the rubric prefix across chunk calls.** The judging system prompt (rubric + rules) is identical on every chunk, so the Anthropic request now marks it as an ephemeral cache breakpoint (`cache_control`); each subsequent chunk reuses the cached prefix instead of re-processing it, cutting per-call latency and input cost. Only the rubric is cached — the per-chunk user message is not. OpenAI-dialect endpoints get the same benefit automatically via their own prefix caching. `internal/insight/deepeval/client.go`.
 
 ### Added
 - **Flat commands for the things you change constantly**, so a model swap is one line instead of a wizard: `knowthyself model [id]`, `use <provider>`, `key [--env NAME]`, and `config`. `config` opens an editable settings screen on a terminal and prints plain text when piped, so it doubles as a status command. `cmd/knowthyself/config.go`.

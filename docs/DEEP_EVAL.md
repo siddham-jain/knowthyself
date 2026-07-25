@@ -145,7 +145,12 @@ slash-command and pasted-command turns are already excluded there.
   capped at `2 * budget / sessions`, with the leftover budget redistributed one
   prompt per session per round. The cap is not optional: sqrt weighting alone still
   handed a 400-prompt session 70% of a 40-prompt budget in testing.
-- **Bounded** by both a prompt count (default 60) and a character budget (default
+- **Sized to the data.** With no explicit override the prompt count scales
+  sub-linearly with what is available — `round(3.5·√available)`, floored at 24 and
+  capped at 60 — since estimation error on a mean falls with √n. It reaches the ceiling
+  only around ~300 scorable prompts and sits near ~40 for a typical ~130, so a modest
+  corpus is read with far fewer calls for almost the same confidence.
+- **Bounded** by that prompt count (ceiling 60) and a character budget (default
   40 000), whichever binds first. Cost is therefore predictable before any call.
 - Each prompt is truncated to 1 200 characters, head and tail retained, middle
   elided — the shape of a long prompt survives, the bulk does not.
@@ -192,6 +197,12 @@ can be judged concurrently, which is where the wall-clock goes: up to `--concurr
 chunk cancels the rest rather than repeating a broken request. `temperature` is sent
 as 0 on the OpenAI dialect and omitted on Anthropic, whose default-thinking models
 reject a non-default value.
+
+The rubric system prompt is identical on every chunk, so it is sent as an ephemeral
+cache breakpoint (`cache_control`) on the Anthropic dialect; each subsequent chunk
+reuses the cached prefix rather than re-processing it. Only the rubric is cached — the
+per-chunk prompts are not. OpenAI-compatible endpoints get the equivalent automatically
+through their own prefix caching.
 
 The response shape is specified in the prompt and the first JSON object is extracted
 from the reply (tolerating code fences), rather than relying on native
