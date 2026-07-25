@@ -3,6 +3,8 @@ package deepeval
 import (
 	"context"
 	"fmt"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/siddham-jain/knowthyself/internal/model"
@@ -118,31 +120,14 @@ func JudgeSample(ctx context.Context, cfg Config, dir string, sample Sample, pro
 	defer cancel()
 
 	client := NewClient(cfg)
-	var judgments []judgment
-	var firstErr error
-	done := 0
 	total := len(sample.Prompts)
 	progress(StageJudging, 0, total)
 
-	for _, chunk := range chunks(sample.Prompts, chunkSize) {
-		got, err := judgeChunk(ctx, client, chunk)
-		done += len(chunk)
+	judgments, firstErr := judgeChunks(ctx, client, chunks(sample.Prompts, chunkSize), cfg.workers(), func(done int) {
 		progress(StageJudging, done, total)
-		if err != nil {
-			if ctx.Err() != nil {
-				return nil, ErrTimeout{Host: cfg.Host(), After: runBudget}
-			}
-			// An auth or format error will repeat on every chunk; stop early rather
-			// than hammering the endpoint with the same broken request.
-			if firstErr == nil {
-				firstErr = err
-			}
-			if !transient(err) {
-				break
-			}
-			continue
-		}
-		judgments = append(judgments, got...)
+	})
+	if ctx.Err() != nil {
+		return nil, ErrTimeout{Host: cfg.Host(), After: runBudget}
 	}
 
 	cov := coverage(judgments, sample)
@@ -167,6 +152,64 @@ func JudgeSample(ctx context.Context, cfg Config, dir string, sample Sample, pro
 	}
 	Save(dir, fingerprint, read)
 	return read, nil
+}
+
+// judgeChunks judges chunks concurrently, up to `workers` at a time, returning every
+// judgment that survived validation plus the first error seen. Chunks are independent
+// by construction, so parallelism is pure wall-clock win with no effect on the result.
+// A hard (non-transient) error stops the rest rather than repeating a broken request
+// across every chunk. onProgress reports the running count of prompts attempted.
+func judgeChunks(ctx context.Context, client *Client, cs [][]Prompt, workers int, onProgress func(done int)) ([]judgment, error) {
+	if workers < 1 {
+		workers = 1
+	}
+
+	// A hard error cancels this scope so in-flight chunks unwind; it never touches the
+	// caller's context, so a budget timeout there stays distinguishable from an abort.
+	ctx, stop := context.WithCancel(ctx)
+	defer stop()
+
+	var (
+		mu        sync.Mutex
+		judgments []judgment
+		firstErr  error
+		wg        sync.WaitGroup
+		done      int64
+	)
+	sem := make(chan struct{}, workers)
+
+	for _, chunk := range cs {
+		sem <- struct{}{}
+		if ctx.Err() != nil {
+			<-sem
+			break
+		}
+		wg.Add(1)
+		go func(chunk []Prompt) {
+			defer wg.Done()
+			defer func() { <-sem }()
+
+			got, err := judgeChunk(ctx, client, chunk)
+			n := atomic.AddInt64(&done, int64(len(chunk)))
+
+			mu.Lock()
+			if err != nil {
+				if firstErr == nil {
+					firstErr = err
+				}
+				if !transient(err) {
+					stop()
+				}
+			} else {
+				judgments = append(judgments, got...)
+			}
+			mu.Unlock()
+			onProgress(int(n))
+		}(chunk)
+	}
+	wg.Wait()
+
+	return judgments, firstErr
 }
 
 func judged(judgments []judgment) int {

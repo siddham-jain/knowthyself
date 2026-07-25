@@ -5,6 +5,9 @@ editor, or agent can pick up with full context.
 
 ## [Unreleased]
 
+### Changed
+- **Deep-eval judges prompt chunks concurrently** instead of one after another, cutting wall-clock roughly in proportion to the worker count with no change to results (chunks are independent by construction). Four run at once by default; tune with `--concurrency` or `KNOWTHYSELF_CONCURRENCY` (clamped to 16), and drop it to 1 on a rate-limited free tier. A hard error still stops the rest early rather than repeating a broken request across every chunk. `internal/insight/deepeval/run.go` (`judgeChunks`).
+
 ### Added
 - **Flat commands for the things you change constantly**, so a model swap is one line instead of a wizard: `knowthyself model [id]`, `use <provider>`, `key [--env NAME]`, and `config`. `config` opens an editable settings screen on a terminal and prints plain text when piped, so it doubles as a status command. `cmd/knowthyself/config.go`.
 - **Settings hub** — one screen listing every provider with its endpoint, model and key source; `⏎ edit · a add · u use · t test · x remove`. Reached by `knowthyself config` and by `s` from the dashboard, so there is one place to learn rather than a set of commands to memorise. It reuses the existing wizard, picker and confirm screens rather than duplicating them. `internal/tui/settings.go`.

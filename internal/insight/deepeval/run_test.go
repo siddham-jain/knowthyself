@@ -9,7 +9,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/siddham-jain/knowthyself/internal/model"
 	"github.com/siddham-jain/knowthyself/internal/profile"
@@ -87,6 +89,87 @@ func testSessions() []model.Session {
 }
 
 func alwaysConsent(Config, Sample) (bool, error) { return true, nil }
+
+// Chunks are independent, so they must judge concurrently up to the worker limit —
+// that is the whole speed win — while still returning every judgment.
+func TestJudgeChunksRunConcurrently(t *testing.T) {
+	var inflight, maxSeen int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := atomic.AddInt32(&inflight, 1)
+		for {
+			old := atomic.LoadInt32(&maxSeen)
+			if n <= old || atomic.CompareAndSwapInt32(&maxSeen, old, n) {
+				break
+			}
+		}
+		time.Sleep(40 * time.Millisecond)
+		atomic.AddInt32(&inflight, -1)
+
+		body, _ := io.ReadAll(r.Body)
+		var in struct {
+			Messages []struct {
+				Content string `json:"content"`
+			} `json:"messages"`
+		}
+		_ = json.Unmarshal(body, &in)
+		user := in.Messages[len(in.Messages)-1].Content
+		var js []string
+		for _, block := range strings.Split(user, "--- prompt_id: ")[1:] {
+			id, rest, _ := strings.Cut(block, " ---\n")
+			quote := strings.SplitN(strings.TrimSpace(rest), "\n", 2)[0]
+			if len(quote) > 20 {
+				quote = quote[:20]
+			}
+			js = append(js, fmt.Sprintf(`{"prompt_id":%q,"key":"goal_clarity","level":2,"quote":%q}`, id, quote))
+		}
+		writeChoice(w, `{"judgments":[`+strings.Join(js, ",")+`]}`)
+	}))
+	defer srv.Close()
+
+	client := NewClient(Config{APIKey: "k", BaseURL: srv.URL, Model: "m", Dialect: DialectOpenAI})
+	var cs [][]Prompt
+	for i := 0; i < 6; i++ {
+		cs = append(cs, []Prompt{{ID: fmt.Sprintf("p#%d", i), Text: fmt.Sprintf("do the thing number %d now", i)}})
+	}
+
+	js, err := judgeChunks(context.Background(), client, cs, 3, func(int) {})
+	if err != nil {
+		t.Fatalf("judgeChunks: %v", err)
+	}
+	if len(js) != 6 {
+		t.Errorf("got %d judgments, want one per chunk (6)", len(js))
+	}
+	if mx := atomic.LoadInt32(&maxSeen); mx < 2 {
+		t.Errorf("max in-flight = %d; chunks did not run concurrently", mx)
+	} else if mx > 3 {
+		t.Errorf("max in-flight = %d; exceeded the worker limit of 3", mx)
+	}
+}
+
+// A hard error on one chunk stops the rest instead of repeating a broken request, and
+// is surfaced as the returned error.
+func TestJudgeChunksStopsOnHardError(t *testing.T) {
+	rec := &recorder{status: http.StatusUnauthorized}
+	srv := httptest.NewServer(rec)
+	defer srv.Close()
+
+	client := NewClient(Config{APIKey: "bad", BaseURL: srv.URL, Model: "m", Dialect: DialectOpenAI})
+	var cs [][]Prompt
+	for i := 0; i < 6; i++ {
+		cs = append(cs, []Prompt{{ID: fmt.Sprintf("p#%d", i), Text: "do the thing now"}})
+	}
+
+	_, err := judgeChunks(context.Background(), client, cs, 2, func(int) {})
+	if _, ok := err.(ErrAuth); !ok {
+		t.Fatalf("err = %T (%v), want ErrAuth", err, err)
+	}
+	rec.mu.Lock()
+	sent := len(rec.bodies)
+	rec.mu.Unlock()
+	if sent >= len(cs) {
+		t.Errorf("sent %d of %d chunks; a hard error should stop the rest early", sent, len(cs))
+	}
+}
 
 func TestRunEndToEnd(t *testing.T) {
 	rec := &recorder{}
