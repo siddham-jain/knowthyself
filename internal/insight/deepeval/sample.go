@@ -14,9 +14,16 @@ import (
 
 const (
 	// DefaultMaxPrompts and DefaultCharBudget bound cost before any call is made,
-	// whichever binds first.
+	// whichever binds first. DefaultMaxPrompts is the ceiling the adaptive size grows
+	// toward, not a flat target.
 	DefaultMaxPrompts = 60
 	DefaultCharBudget = 40_000
+
+	// Adaptive sizing: target ≈ sampleGrowth·√available, floored so a small corpus is
+	// still read meaningfully and capped at DefaultMaxPrompts. sampleGrowth is tuned so
+	// the target reaches the ceiling around ~300 scorable prompts and is ~40 near ~130.
+	minAdaptivePrompts = 24
+	sampleGrowth       = 3.5
 
 	// maxPromptChars truncates one prompt; the shape of a long prompt survives, the
 	// bulk does not.
@@ -68,9 +75,9 @@ func (s Sample) Fingerprint(model string) string {
 // Allocation across sessions is proportional to sqrt(prompts) rather than to
 // prompts, so one 500-prompt session cannot drown twenty small ones.
 func Build(sessions []model.Session, maxPrompts, charBudget int) Sample {
-	if maxPrompts <= 0 {
-		maxPrompts = DefaultMaxPrompts
-	}
+	// A zero maxPrompts means "size it to the data": scale the target sub-linearly with
+	// how much history there is, rather than always sending the flat ceiling.
+	adaptive := maxPrompts <= 0
 	if charBudget <= 0 {
 		charBudget = DefaultCharBudget
 	}
@@ -99,6 +106,9 @@ func Build(sessions []model.Session, maxPrompts, charBudget int) Sample {
 	}
 	if len(buckets) == 0 {
 		return Sample{}
+	}
+	if adaptive {
+		maxPrompts = targetPrompts(available)
 	}
 	sort.Slice(buckets, func(i, j int) bool { return buckets[i].id < buckets[j].id })
 
@@ -175,6 +185,24 @@ func Build(sessions []model.Session, maxPrompts, charBudget int) Sample {
 		covered[p.session] = true
 	}
 	return Sample{Prompts: picked, Sessions: len(covered), Available: available}
+}
+
+// targetPrompts sizes the sample to how much history there is. Estimation error on a
+// mean falls with √n, so the count grows sub-linearly: a modest corpus is read with far
+// fewer calls than the flat ceiling for almost the same confidence, while a large one
+// still reaches DefaultMaxPrompts. Deterministic — the same corpus yields the same size.
+func targetPrompts(available int) int {
+	t := int(math.Round(sampleGrowth * math.Sqrt(float64(available))))
+	if t < minAdaptivePrompts {
+		t = minAdaptivePrompts
+	}
+	if t > DefaultMaxPrompts {
+		t = DefaultMaxPrompts
+	}
+	if t > available {
+		t = available
+	}
+	return t
 }
 
 // bucket is one session's scorable prompts, the unit sampling is stratified over.
