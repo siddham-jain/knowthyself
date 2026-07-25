@@ -115,8 +115,15 @@ func (c *Client) request(system, user string) (string, []byte, error) {
 		body, err := json.Marshal(map[string]any{
 			"model":      c.cfg.Model,
 			"max_tokens": maxTokens,
-			"system":     system,
-			"messages":   []map[string]string{{"role": "user", "content": user}},
+			// The rubric system prompt is identical on every chunk call, so mark it as a
+			// cache breakpoint: each subsequent request reuses the cached prefix instead
+			// of re-processing it. Endpoints that ignore cache_control just pay full price.
+			"system": []map[string]any{{
+				"type":          "text",
+				"text":          system,
+				"cache_control": map[string]string{"type": "ephemeral"},
+			}},
+			"messages": []map[string]string{{"role": "user", "content": user}},
 		})
 		return c.cfg.BaseURL + "/messages", body, err
 	}

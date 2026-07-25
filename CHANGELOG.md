@@ -6,7 +6,7 @@ editor, or agent can pick up with full context.
 ## [Unreleased]
 
 ### Changed
-- **The deep-eval sample now scales to how much history you have** instead of always sending a flat 60 prompts. Estimation error on a mean falls with √n, so the target grows sub-linearly — roughly `3.5·√(available)`, floored at 24 and capped at 60 — reaching the ceiling only around ~300 scorable prompts and sitting near ~40 for a typical ~130. Most users get a faster, cheaper read for almost the same confidence; large corpora are unaffected. Deterministic and overridable: an explicit sample size still wins, and the same corpus always yields the same sample. `internal/insight/deepeval/sample.go` (`targetPrompts`).
+- **Deep-eval caches the rubric prefix across chunk calls.** The judging system prompt (rubric + rules) is identical on every chunk, so the Anthropic request now marks it as an ephemeral cache breakpoint (`cache_control`); each subsequent chunk reuses the cached prefix instead of re-processing it, cutting per-call latency and input cost. Only the rubric is cached — the per-chunk user message is not. OpenAI-dialect endpoints get the same benefit automatically via their own prefix caching. `internal/insight/deepeval/client.go`.
 
 ### Added
 - **Flat commands for the things you change constantly**, so a model swap is one line instead of a wizard: `knowthyself model [id]`, `use <provider>`, `key [--env NAME]`, and `config`. `config` opens an editable settings screen on a terminal and prints plain text when piped, so it doubles as a status command. `cmd/knowthyself/config.go`.

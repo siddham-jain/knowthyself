@@ -228,6 +228,37 @@ func TestRunAsksConsentForANewSample(t *testing.T) {
 	}
 }
 
+// The rubric system prompt is identical on every chunk, so the Anthropic request must
+// mark it as a cache breakpoint — and only it, since the user message varies per chunk.
+func TestAnthropicRequestCachesRubric(t *testing.T) {
+	cfg := Config{APIKey: "k", BaseURL: "https://api.anthropic.com/v1", Model: "claude-sonnet-5", Dialect: DialectAnthropic}
+	_, body, err := NewClient(cfg).request("the-rubric-text", "grade these prompts")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var sent struct {
+		System []struct {
+			Type         string          `json:"type"`
+			Text         string          `json:"text"`
+			CacheControl json.RawMessage `json:"cache_control"`
+		} `json:"system"`
+	}
+	if err := json.Unmarshal(body, &sent); err != nil {
+		t.Fatalf("system is not the cacheable block form: %v", err)
+	}
+	if len(sent.System) != 1 || sent.System[0].Text != "the-rubric-text" {
+		t.Fatalf("system = %+v, want one text block carrying the rubric", sent.System)
+	}
+	if !strings.Contains(string(sent.System[0].CacheControl), "ephemeral") {
+		t.Errorf("rubric not marked as an ephemeral cache breakpoint: %s", sent.System[0].CacheControl)
+	}
+	// Exactly one breakpoint: caching the per-chunk user message would defeat the point.
+	if n := strings.Count(string(body), "ephemeral"); n != 1 {
+		t.Errorf("expected exactly one cache breakpoint, got %d", n)
+	}
+}
+
 // An endpoint that rejects the key must surface as ErrAuth with a remedy, not as a
 // bare status code.
 func TestRunAuthFailure(t *testing.T) {
