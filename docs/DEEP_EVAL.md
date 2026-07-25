@@ -190,8 +190,13 @@ approval path — no consent, no send.
 
 ### 4.4 Judge
 
-Chunks of 12 prompts, judged independently, temperature 0, fixed `max_tokens`.
-Independence means one poisoned chunk is droppable without discarding the run.
+Chunks of 8 prompts, judged independently with a fixed `max_tokens`. Independence
+means one poisoned chunk is droppable without discarding the run — and that the chunks
+can be judged concurrently, which is where the wall-clock goes: up to `--concurrency`
+(default 4, env `KNOWTHYSELF_CONCURRENCY`) are in flight at once. A hard error on any
+chunk cancels the rest rather than repeating a broken request. `temperature` is sent
+as 0 on the OpenAI dialect and omitted on Anthropic, whose default-thinking models
+reject a non-default value.
 
 The rubric system prompt is identical on every chunk, so it is sent as an ephemeral
 cache breakpoint (`cache_control`) on the Anthropic dialect; each subsequent chunk

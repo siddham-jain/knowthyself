@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -18,6 +19,11 @@ const (
 const (
 	defaultBaseURL = "https://api.anthropic.com/v1"
 	defaultModel   = "claude-sonnet-5"
+
+	// Chunks are judged concurrently. Four keeps a read brisk without tripping the
+	// rate limits common on free tiers; the ceiling guards against a silly override.
+	defaultConcurrency = 4
+	maxConcurrency     = 16
 )
 
 // Config is the resolved BYOK connection. Credentials are never logged or
@@ -37,6 +43,20 @@ type Config struct {
 
 	MaxPrompts int `json:"max_prompts,omitempty"`
 	CharBudget int `json:"char_budget,omitempty"`
+	// Concurrency is how many chunks are judged at once; 0 means the default.
+	Concurrency int `json:"concurrency,omitempty"`
+}
+
+// workers is the resolved chunk concurrency, defaulted and clamped to a sane ceiling.
+func (c Config) workers() int {
+	n := c.Concurrency
+	if n < 1 {
+		n = defaultConcurrency
+	}
+	if n > maxConcurrency {
+		n = maxConcurrency
+	}
+	return n
 }
 
 // Host is the endpoint host alone — what the consent screen shows and what a
@@ -51,11 +71,12 @@ func (c Config) Host() string {
 
 // Flags are the command-line overrides, empty when unset.
 type Flags struct {
-	Provider string
-	APIKey   string
-	BaseURL  string
-	Model    string
-	Dialect  string
+	Provider    string
+	APIKey      string
+	BaseURL     string
+	Model       string
+	Dialect     string
+	Concurrency int
 }
 
 // Resolve builds the connection from flags, then environment, then the selected
@@ -89,6 +110,13 @@ func Resolve(f Flags, dir string) (Config, error) {
 		cfg.Dialect = detectDialect(cfg.BaseURL)
 	default:
 		return Config{}, fmt.Errorf("unknown API dialect %q — use \"anthropic\" or \"openai\"", dialect)
+	}
+
+	cfg.Concurrency = f.Concurrency
+	if cfg.Concurrency == 0 {
+		if n, err := strconv.Atoi(os.Getenv("KNOWTHYSELF_CONCURRENCY")); err == nil {
+			cfg.Concurrency = n
+		}
 	}
 
 	cfg.BaseURL = strings.TrimRight(cfg.BaseURL, "/")

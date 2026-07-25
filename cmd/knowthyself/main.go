@@ -75,6 +75,7 @@ func run(args []string) error {
 		baseURL      = fs.String("base-url", "", "API base URL for --deep-eval (default https://api.anthropic.com/v1)")
 		modelName    = fs.String("model", "", "model to judge with (default claude-sonnet-5)")
 		apiDialect   = fs.String("api-dialect", "", "wire format: anthropic or openai (default: inferred from --base-url)")
+		concurrency  = fs.Int("concurrency", 0, "how many prompt chunks to judge at once during --deep-eval (default 4)")
 	)
 	fs.BoolVar(showVersion, "v", false, "print version and exit (shorthand)")
 	fs.Usage = func() { printHelp(os.Stderr, false) }
@@ -155,7 +156,7 @@ func run(args []string) error {
 	// that is already complete, and any failure leaves that profile untouched.
 	var deepReadErr string
 	if *deepEval {
-		flags := deepeval.Flags{Provider: *providerName, APIKey: *apiKey, BaseURL: *baseURL, Model: *modelName, Dialect: *apiDialect}
+		flags := deepeval.Flags{Provider: *providerName, APIKey: *apiKey, BaseURL: *baseURL, Model: *modelName, Dialect: *apiDialect, Concurrency: *concurrency}
 		if err := attachDeepRead(ctx, &prof, flags, filepath.Dir(*storePath), sessions, greet); err != nil {
 			deepReadErr = deepeval.Explain(err)
 			fmt.Fprintln(os.Stderr, "knowthyself: deep-eval skipped — "+deepReadErr)
