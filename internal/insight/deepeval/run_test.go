@@ -198,6 +198,36 @@ func TestRunUsesCache(t *testing.T) {
 	}
 }
 
+// Consent is per send, not a remembered grant: once a corpus is approved and its read
+// is cached, adding new sessions produces a new sample that must ask again before any
+// of that new text leaves the machine.
+func TestRunAsksConsentForANewSample(t *testing.T) {
+	rec := &recorder{}
+	srv := httptest.NewServer(rec)
+	defer srv.Close()
+
+	dir := t.TempDir()
+	cfg := Config{APIKey: "k", BaseURL: srv.URL, Model: "m", Dialect: DialectOpenAI}
+	if _, err := Run(context.Background(), cfg, dir, testSessions(), alwaysConsent, nil); err != nil {
+		t.Fatalf("first run: %v", err)
+	}
+
+	grown := append(testSessions(), model.Session{ID: "sess-b", Turns: []model.Turn{
+		{Role: model.RoleUser, Text: "add a rate limiter to the ingest endpoint before the queue fills"},
+		{Role: model.RoleAssistant, Text: "sure"},
+	}})
+	asked := false
+	if _, err := Run(context.Background(), cfg, dir, grown, func(Config, Sample) (bool, error) {
+		asked = true
+		return true, nil
+	}, nil); err != nil {
+		t.Fatalf("second run: %v", err)
+	}
+	if !asked {
+		t.Error("a new sample must re-ask for consent before sending, even to an already-used endpoint")
+	}
+}
+
 // An endpoint that rejects the key must surface as ErrAuth with a remedy, not as a
 // bare status code.
 func TestRunAuthFailure(t *testing.T) {

@@ -30,8 +30,8 @@ actual words and judge that. Nothing else justifies sending data off the machine
    deep-eval ran.
 2. **Its output is separately labelled.** Model-judged results are never averaged
    into deterministic ones, and the surface always states the model and sample size.
-3. **Opt-in per endpoint.** Explicit consent, showing the exact redacted payload,
-   before the first byte leaves for a given (host, model).
+3. **Opt-in per send.** Explicit consent, showing the exact redacted payload, before
+   any byte leaves — every run that actually sends, not once per endpoint.
 4. **Failure degrades, never breaks.** Any error falls back to the heuristic engine
    with a specific, actionable message. `knowthyself --deep-eval` on a plane still
    renders a dashboard.
@@ -175,11 +175,13 @@ negative leaks a credential.
 
 ### 4.3 Consent
 
-Before the first send to a given (host, model): a screen stating the endpoint host,
-the model, the number of prompts, the character count, and the estimated input
-tokens — with the exact redacted payload available to page through. Approval is
-recorded per (host, model), so changing endpoint or model asks again.
-`--yes` skips it for scripted use.
+Before every send: a screen stating the endpoint host, the model, the number of
+prompts, the character count, and the estimated input tokens — with the exact redacted
+payload available to page through. Consent is per send, not remembered: any run that
+would put prompts on the wire asks first. An unchanged corpus is served from the cache
+below and sends nothing, so it never prompts; adding sessions changes the sample
+fingerprint and asks again before that new text leaves. There is no terminal-less
+approval path — no consent, no send.
 
 ### 4.4 Judge
 
@@ -233,14 +235,18 @@ instant. Entries record which model and rubric version produced them.
 Any OpenAI-compatible or Anthropic-compatible chat endpoint. Plain `net/http` +
 `encoding/json` — no SDK, keeping the build CGO-free and dependency-light.
 
-Resolution order: **flag → env → config file → default.**
+Resolution order: **flag → knowthyself env → config file → default.** Only
+knowthyself's own inputs are consulted. A bare `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`
+in the shell belongs to another tool and is never borrowed automatically; a saved
+provider may read it via `KeyEnv`, but only because the user chose that provider.
 
-| Setting | Flag | Env | Fallback env |
-|:--------|:-----|:----|:-------------|
-| Key | `--api-key` | `KNOWTHYSELF_API_KEY` | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY` |
-| Base URL | `--base-url` | `KNOWTHYSELF_BASE_URL` | — |
-| Model | `--model` | `KNOWTHYSELF_MODEL` | — |
-| Dialect | `--api-dialect` | `KNOWTHYSELF_API_DIALECT` | auto-detected from host |
+| Setting | Flag | Env |
+|:--------|:-----|:----|
+| Key | `--api-key` | `KNOWTHYSELF_API_KEY` |
+| Auth token | — | `KNOWTHYSELF_AUTH_TOKEN` |
+| Base URL | `--base-url` | `KNOWTHYSELF_BASE_URL` |
+| Model | `--model` | `KNOWTHYSELF_MODEL` |
+| Dialect | `--api-dialect` | `KNOWTHYSELF_API_DIALECT` (else auto-detected from host) |
 
 Config file at `~/.config/knowthyself/config.json`, mode 0600. The key is never
 logged, never printed, and is redacted from every error string.

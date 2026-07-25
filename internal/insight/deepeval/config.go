@@ -73,9 +73,11 @@ func Resolve(f Flags, dir string) (Config, error) {
 	saved, name, _ := store.selected(f.Provider)
 
 	cfg := Config{Provider: name}
-	cfg.APIKey = firstNonEmpty(f.APIKey, os.Getenv("KNOWTHYSELF_API_KEY"), saved.Key(),
-		os.Getenv("ANTHROPIC_API_KEY"), os.Getenv("OPENAI_API_KEY"))
-	cfg.AuthToken = firstNonEmpty(os.Getenv("KNOWTHYSELF_AUTH_TOKEN"), os.Getenv("ANTHROPIC_AUTH_TOKEN"))
+	// Only knowthyself's own inputs are consulted: a flag, its namespaced env var, or a
+	// provider the user saved. A bare ANTHROPIC_API_KEY/OPENAI_API_KEY in the shell
+	// belongs to other tools and is never borrowed silently — the user picks what to use.
+	cfg.APIKey = firstNonEmpty(f.APIKey, os.Getenv("KNOWTHYSELF_API_KEY"), saved.Key())
+	cfg.AuthToken = os.Getenv("KNOWTHYSELF_AUTH_TOKEN")
 	cfg.BaseURL = firstNonEmpty(f.BaseURL, os.Getenv("KNOWTHYSELF_BASE_URL"), saved.BaseURL, defaultBaseURL)
 	cfg.Model = firstNonEmpty(f.Model, os.Getenv("KNOWTHYSELF_MODEL"), saved.Model, defaultModel)
 

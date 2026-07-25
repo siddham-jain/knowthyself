@@ -38,7 +38,7 @@ func (e ErrNoKey) Error() string { return "deep-eval needs an API key and none i
 func (e ErrNoKey) Remedy() string {
 	return "run `knowthyself provider add` to set one up, or pass --api-key / export KNOWTHYSELF_API_KEY.\n" +
 		"  a Claude Code subscription login is not an API key — get one at console.anthropic.com,\n" +
-		"  or export ANTHROPIC_AUTH_TOKEN if you use an OAuth token from `ant auth login`"
+		"  or export KNOWTHYSELF_AUTH_TOKEN if you use an OAuth token from `ant auth login`"
 }
 
 // ErrUnknownProvider names a --provider that was never saved.

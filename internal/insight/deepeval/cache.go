@@ -1,8 +1,6 @@
 package deepeval
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -11,8 +9,8 @@ import (
 )
 
 // Reads are cached by sample fingerprint, so re-running with no new sessions is free
-// and instant. Consent is recorded per (host, model): pointing knowthyself at a
-// different endpoint or model asks again.
+// and instant, and sends nothing. Consent is not cached: any run that would put new
+// prompts on the wire asks first.
 
 func cacheDir(dir string) string { return filepath.Join(dir, "deep-eval") }
 
@@ -43,29 +41,4 @@ func Save(dir, fingerprint string, dr *profile.DeepRead) {
 		return
 	}
 	_ = os.WriteFile(cacheFile(dir, fingerprint), b, 0o600)
-}
-
-// consentKey identifies an endpoint+model pair, without recording either in the
-// clear on disk.
-func consentKey(cfg Config) string {
-	sum := sha256.Sum256([]byte(cfg.Host() + "\x00" + cfg.Model))
-	return hex.EncodeToString(sum[:8])
-}
-
-func consentFile(dir string, cfg Config) string {
-	return filepath.Join(cacheDir(dir), "consent-"+consentKey(cfg))
-}
-
-// HasConsent reports whether this endpoint and model were already approved.
-func HasConsent(dir string, cfg Config) bool {
-	_, err := os.Stat(consentFile(dir, cfg))
-	return err == nil
-}
-
-// RecordConsent marks this endpoint and model as approved.
-func RecordConsent(dir string, cfg Config) error {
-	if err := os.MkdirAll(cacheDir(dir), 0o755); err != nil {
-		return err
-	}
-	return os.WriteFile(consentFile(dir, cfg), []byte(cfg.Host()+" "+cfg.Model+"\n"), 0o600)
 }

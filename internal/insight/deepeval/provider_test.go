@@ -150,6 +150,21 @@ func TestResolveUnknownProviderNamesTheKnownOnes(t *testing.T) {
 	}
 }
 
+// A bare third-party key in the shell must not be borrowed silently: with nothing
+// configured, resolution fails so the user is walked through picking a provider,
+// rather than the tool quietly defaulting to Anthropic on a key meant for another tool.
+func TestResolveIgnoresThirdPartyEnvKeys(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("ANTHROPIC_API_KEY", "borrowed-anthropic")
+	t.Setenv("OPENAI_API_KEY", "borrowed-openai")
+
+	_, err := Resolve(Flags{}, dir)
+	var noKey ErrNoKey
+	if !asErr(err, &noKey) {
+		t.Fatalf("err = %T (%v), want ErrNoKey — third-party env keys must not be auto-used", err, err)
+	}
+}
+
 // A config written before named providers existed must keep working.
 func TestLegacyFlatConfigStillResolves(t *testing.T) {
 	dir := t.TempDir()

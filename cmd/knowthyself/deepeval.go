@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/siddham-jain/knowthyself/internal/insight/deepeval"
 	"github.com/siddham-jain/knowthyself/internal/model"
@@ -14,7 +13,8 @@ import (
 
 // attachDeepRead runs the opt-in model-judged read and hangs it off the profile. The
 // profile is already complete when this is called, so every failure path here is
-// non-fatal to the run.
+// non-fatal to the run. Consent and the judging loader are separate full-screen steps
+// so the loader can animate while the work runs in the background.
 func attachDeepRead(ctx context.Context, prof *profile.Profile, flags deepeval.Flags, dir string, sessions []model.Session, interactive bool) error {
 	cfg, err := deepeval.Resolve(flags, dir)
 	if err != nil {
@@ -29,19 +29,54 @@ func attachDeepRead(ctx context.Context, prof *profile.Profile, flags deepeval.F
 		}
 	}
 
-	// Progress goes to stderr so --json stdout stays clean and pipeable.
-	spin := newSpinner(os.Stderr, interactive)
-	defer spin.Stop()
+	sample, cached, err := deepeval.Prepare(cfg, dir, sessions)
+	if err != nil {
+		return err
+	}
+	if cached != nil {
+		prof.DeepRead = cached
+		return nil
+	}
+	// Without a terminal there is no way to obtain informed consent, so the read is
+	// refused rather than sent silently.
+	if !interactive {
+		return fmt.Errorf("deep-eval needs a terminal to confirm what gets sent to %s", cfg.Host())
+	}
 
-	read, err := deepeval.Run(ctx, cfg, dir, sessions, consenter(interactive), spin.Update)
-	spin.Stop()
+	ok, err := tui.RunConsentPrompt(termWidth(), consentRequest(cfg, sample))
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return deepeval.ErrDeclined{}
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	read, err := tui.RunJudging(termWidth(), cfg.Host(), len(sample.Prompts), cancel,
+		func(progress func(stage string, done, total int)) (*profile.DeepRead, error) {
+			return deepeval.JudgeSample(ctx, cfg, dir, sample, progress)
+		})
 	if err != nil {
 		return err
 	}
 	prof.DeepRead = read
-	fmt.Fprintf(os.Stderr, "  deep read done — %d prompts judged by %s (%s confidence)\n",
-		read.Sample.Prompts, read.Model, read.Confidence)
 	return nil
+}
+
+// consentRequest describes exactly what would be sent, for the approval screen.
+func consentRequest(cfg deepeval.Config, sample deepeval.Sample) tui.ConsentRequest {
+	samples := make([]string, 0, len(sample.Prompts))
+	for _, p := range sample.Prompts {
+		samples = append(samples, p.Text)
+	}
+	return tui.ConsentRequest{
+		Host:    cfg.Host(),
+		Model:   cfg.Model,
+		Prompts: len(sample.Prompts),
+		Chars:   sample.Chars(),
+		Samples: samples,
+	}
 }
 
 // setUpProvider walks the user through configuring an endpoint, then resolves
@@ -82,25 +117,4 @@ func setUpProvider(dir string, flags deepeval.Flags) (deepeval.Config, error) {
 	}
 	flags.Provider = draft.Name
 	return deepeval.Resolve(flags, dir)
-}
-
-// consenter builds the approval gate. Without a terminal there is no way to obtain
-// informed consent, so the read is refused rather than sent silently.
-func consenter(interactive bool) deepeval.Consenter {
-	return func(cfg deepeval.Config, s deepeval.Sample) (bool, error) {
-		if !interactive {
-			return false, fmt.Errorf("deep-eval needs a terminal the first time, to confirm what gets sent to %s", cfg.Host())
-		}
-		samples := make([]string, 0, len(s.Prompts))
-		for _, p := range s.Prompts {
-			samples = append(samples, p.Text)
-		}
-		return tui.RunConsentPrompt(termWidth(), tui.ConsentRequest{
-			Host:    cfg.Host(),
-			Model:   cfg.Model,
-			Prompts: len(s.Prompts),
-			Chars:   s.Chars(),
-			Samples: samples,
-		})
-	}
 }

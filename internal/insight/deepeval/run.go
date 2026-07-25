@@ -48,6 +48,12 @@ type ErrDeclined struct{}
 func (ErrDeclined) Error() string  { return "deep-eval was declined" }
 func (ErrDeclined) Remedy() string { return "run without --deep-eval to stay entirely local" }
 
+// ErrCanceled reports that the user stopped the read while it was judging.
+type ErrCanceled struct{}
+
+func (ErrCanceled) Error() string  { return "deep read canceled" }
+func (ErrCanceled) Remedy() string { return "run --deep-eval again when you have a moment" }
+
 // ErrNoPrompts reports there was nothing worth judging.
 type ErrNoPrompts struct{}
 
@@ -60,33 +66,51 @@ func (ErrNoPrompts) Remedy() string {
 // the computed profile for context; it never writes back a score.
 //
 // The pipeline is: sample, redact, consent, chunk, judge, validate, aggregate,
-// synthesise, cache.
+// synthesise, cache. A UI that wants to animate the judging phase splits this into
+// Prepare (before consent) and JudgeSample (after), driving the latter itself.
 func Run(ctx context.Context, cfg Config, dir string, sessions []model.Session, consent Consenter, progress Progress) (*profile.DeepRead, error) {
-	if progress == nil {
-		progress = func(string, int, int) {}
+	sample, cached, err := Prepare(cfg, dir, sessions)
+	if err != nil {
+		return nil, err
 	}
-	sample := Build(sessions, cfg.MaxPrompts, cfg.CharBudget)
-	if len(sample.Prompts) == 0 {
-		return nil, ErrNoPrompts{}
-	}
-
-	fingerprint := sample.Fingerprint(cfg.Model)
-	if cached := LoadCached(dir, fingerprint); cached != nil {
+	if cached != nil {
 		return cached, nil
 	}
 
-	if !HasConsent(dir, cfg) {
-		ok, err := consent(cfg, sample)
-		if err != nil {
-			return nil, err
-		}
-		if !ok {
-			return nil, ErrDeclined{}
-		}
-		if err := RecordConsent(dir, cfg); err != nil {
-			return nil, err
-		}
+	// Consent is per send, not remembered: any run that would actually put prompts on
+	// the wire asks first. An unchanged sample is served from the cache above and sends
+	// nothing, so this only fires when new text would leave the machine.
+	ok, err := consent(cfg, sample)
+	if err != nil {
+		return nil, err
 	}
+	if !ok {
+		return nil, ErrDeclined{}
+	}
+	return JudgeSample(ctx, cfg, dir, sample, progress)
+}
+
+// Prepare builds the bounded, redacted sample and returns a cached read when this
+// exact sample under this exact rubric was already judged. A caller shows consent
+// between Prepare and JudgeSample; a non-nil cached read means nothing need be sent.
+func Prepare(cfg Config, dir string, sessions []model.Session) (Sample, *profile.DeepRead, error) {
+	sample := Build(sessions, cfg.MaxPrompts, cfg.CharBudget)
+	if len(sample.Prompts) == 0 {
+		return Sample{}, nil, ErrNoPrompts{}
+	}
+	if cached := LoadCached(dir, sample.Fingerprint(cfg.Model)); cached != nil {
+		return sample, cached, nil
+	}
+	return sample, nil, nil
+}
+
+// JudgeSample runs the judging pipeline on a sample the caller has already obtained
+// consent for. progress is called as chunks complete; pass nil to ignore it.
+func JudgeSample(ctx context.Context, cfg Config, dir string, sample Sample, progress Progress) (*profile.DeepRead, error) {
+	if progress == nil {
+		progress = func(string, int, int) {}
+	}
+	fingerprint := sample.Fingerprint(cfg.Model)
 
 	// The budget covers every call, so a wedged endpoint ends with a clear timeout
 	// rather than an indefinite wait.
